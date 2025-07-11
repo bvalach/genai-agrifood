@@ -30,6 +30,16 @@ header nav a.nav-link:hover {
     color: #333;
 }
 
+.acknowledgement {
+    margin-top: 1rem;
+    font-size: 0.9em;
+    color: #ccc;
+}
+
+.acknowledgement p {
+    margin: 0.2rem 0;
+}
+
 #paper-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -95,4 +105,25 @@ header nav a.nav-link:hover {
     color: black;
     text-decoration: none;
     cursor: pointer;
+} 
+
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 1.5rem 1rem;
+    margin-top: 2rem;
+}
+
+footer p {
+    margin: 0.5rem 0;
+}
+
+footer a {
+    color: #fff;
+    text-decoration: underline;
+}
+
+footer a:hover {
+    text-decoration: none;
 } 
