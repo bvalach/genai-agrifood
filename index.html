@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.semanticscholar.org http://export.arxiv.org; img-src 'self' data:; frame-src 'self';">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>foodAI - Generative AI in AgriFood</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -18,6 +23,24 @@
             <a href="mapa.html" class="nav-link">View Literature map</a>
         </nav>
     </header>
+    <div class="timeline-container">
+        <h3>Filter by Publication Date</h3>
+        <div class="timeline-controls">
+            <div class="timeline-labels">
+                <span id="min-date">Jan 2025</span>
+                <span id="max-date">Dec 2030</span>
+            </div>
+            <div class="timeline-slider">
+                <input type="range" id="date-slider-min" min="0" max="23" value="0" step="1">
+                <input type="range" id="date-slider-max" min="0" max="23" value="23" step="1">
+            </div>
+            <div class="timeline-selected">
+                <span>Selected range: </span>
+                <span id="selected-range">Jan 2025 - Dec 2026</span>
+                <button id="reset-timeline">Reset</button>
+            </div>
+        </div>
+    </div>
     <main id="paper-grid">
         <!-- Paper cards will be inserted here by JavaScript -->
     </main>

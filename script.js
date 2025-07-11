@@ -9,6 +9,158 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalAbstract = document.getElementById('modal-abstract');
     const modalLink = document.getElementById('modal-link');
 
+    // FUNCIONES DE SEGURIDAD
+    function escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function sanitizeUrl(url) {
+        if (!url) return '#';
+        
+        // Permitir solo URLs HTTPS/HTTP válidas
+        try {
+            const urlObj = new URL(url);
+            if (urlObj.protocol === 'https:' || urlObj.protocol === 'http:') {
+                return url;
+            }
+        } catch (e) {
+            console.warn('Invalid URL detected:', url);
+        }
+        return '#';
+    }
+
+    function sanitizeDoi(doi) {
+        if (!doi) return '';
+        // DOI debe seguir el formato estándar: 10.xxxx/xxxxx
+        const doiPattern = /^10\.\d{4,}\/[^\s]+$/;
+        return doiPattern.test(doi) ? doi : '';
+    }
+
+    function truncateText(text, maxLength = 1000) {
+        if (!text) return '';
+        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+
+    // Timeline elements
+    const dateSliderMin = document.getElementById('date-slider-min');
+    const dateSliderMax = document.getElementById('date-slider-max');
+    const selectedRange = document.getElementById('selected-range');
+    const resetButton = document.getElementById('reset-timeline');
+    const minDateLabel = document.getElementById('min-date');
+    const maxDateLabel = document.getElementById('max-date');
+
+    let allPapers = [];
+    let dateRange = { min: 0, max: 23 }; // Índices de meses
+    let actualDateRange = { minDate: null, maxDate: null }; // Fechas reales
+
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    // Convertir fecha a índice de mes (0 = Jan 2025, 12 = Jan 2026, etc.)
+    function dateToMonthIndex(date, baseYear) {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        return (year - baseYear) * 12 + month;
+    }
+
+    // Convertir índice de mes a fecha
+    function monthIndexToDate(index, baseYear) {
+        const year = baseYear + Math.floor(index / 12);
+        const month = index % 12;
+        return new Date(year, month, 1);
+    }
+
+    // Formatear fecha para mostrar
+    function formatMonthYear(index, baseYear) {
+        const date = monthIndexToDate(index, baseYear);
+        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    }
+
+    // Timeline functionality
+    function updateDateRange() {
+        const minVal = parseInt(dateSliderMin.value);
+        const maxVal = parseInt(dateSliderMax.value);
+        
+        // Ensure min doesn't exceed max
+        if (minVal > maxVal) {
+            dateSliderMin.value = maxVal;
+        }
+        if (maxVal < minVal) {
+            dateSliderMax.value = minVal;
+        }
+        
+        const finalMin = parseInt(dateSliderMin.value);
+        const finalMax = parseInt(dateSliderMax.value);
+        
+        const baseYear = actualDateRange.minDate ? actualDateRange.minDate.getFullYear() : 2025;
+        const minText = formatMonthYear(finalMin, baseYear);
+        const maxText = formatMonthYear(finalMax, baseYear);
+        
+        selectedRange.textContent = `${minText} - ${maxText}`;
+        filterPapersByDateRange(finalMin, finalMax, baseYear);
+    }
+
+    function filterPapersByDateRange(minIndex, maxIndex, baseYear) {
+        const minDate = monthIndexToDate(minIndex, baseYear);
+        const maxDate = monthIndexToDate(maxIndex + 1, baseYear); // +1 para incluir todo el mes
+        
+        const filteredPapers = allPapers.filter(paper => {
+            if (!paper.date) return false;
+            const paperDate = new Date(paper.date);
+            return paperDate >= minDate && paperDate < maxDate;
+        });
+        
+        displayPapers(filteredPapers);
+    }
+
+    function initializeTimeline(papers) {
+        if (papers.length === 0) return;
+        
+        const dates = papers
+            .filter(paper => paper.date)
+            .map(paper => new Date(paper.date))
+            .filter(date => !isNaN(date));
+        
+        if (dates.length === 0) return;
+        
+        const minDate = new Date(Math.min(...dates));
+        const maxDate = new Date(Math.max(...dates));
+        
+        actualDateRange = { minDate, maxDate };
+        
+        const baseYear = minDate.getFullYear();
+        const minIndex = dateToMonthIndex(minDate, baseYear);
+        const maxIndex = dateToMonthIndex(maxDate, baseYear);
+        
+        dateRange = { min: minIndex, max: maxIndex };
+        
+        // Update slider attributes
+        dateSliderMin.min = minIndex;
+        dateSliderMin.max = maxIndex;
+        dateSliderMin.value = minIndex;
+        
+        dateSliderMax.min = minIndex;
+        dateSliderMax.max = maxIndex;
+        dateSliderMax.value = maxIndex;
+        
+        // Update labels
+        minDateLabel.textContent = formatMonthYear(minIndex, baseYear);
+        maxDateLabel.textContent = formatMonthYear(maxIndex, baseYear);
+        selectedRange.textContent = `${formatMonthYear(minIndex, baseYear)} - ${formatMonthYear(maxIndex, baseYear)}`;
+    }
+
+    function resetTimeline() {
+        dateSliderMin.value = dateRange.min;
+        dateSliderMax.value = dateRange.max;
+        updateDateRange();
+    }
+
     // Mejorar el estado de carga
     function showLoadingState() {
         paperGrid.innerHTML = `
@@ -60,71 +212,129 @@ document.addEventListener('DOMContentLoaded', () => {
             '(+"robot grasping" +("fruit" | "vegetable" | "crop") +("generative model" | "simulation"))',
             '(+"path planning" +"autonomous tractor" +GAN)'
         ];
+        
         const query = queries.join(' | ');
         const fields = 'title,authors,year,abstract,url,publicationDate,externalIds';
-        const url = `https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=${encodeURIComponent(query)}&fields=${fields}&limit=50`;
+        const encodedQuery = encodeURIComponent(query);
+        const url = `https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=${encodedQuery}&fields=${fields}&limit=50`;
 
         try {
-            const response = await fetch(url);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                },
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
             if (!response.ok) {
-                throw new Error(`Semantic Scholar API error: ${response.status}`);
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
+
             const data = await response.json();
+            
+            // Validar estructura de respuesta
+            if (!data || typeof data !== 'object') {
+                throw new Error('Invalid response format');
+            }
+
             const papers = data.data || data || [];
-            return papers.map(paper => ({
-                title: paper.title,
-                authors: paper.authors ? paper.authors.map(a => a.name) : ['Unknown'],
-                date: paper.publicationDate || paper.year || 'N/A',
-                abstract: paper.abstract || 'No abstract available.',
-                url: paper.url,
-                doi: paper.externalIds && paper.externalIds.DOI ? paper.externalIds.DOI : null,
-                source: 'Semantic Scholar'
-            }));
+            
+            // Validar y sanitizar cada paper
+            return papers
+                .filter(paper => paper && typeof paper === 'object')
+                .slice(0, 50) // Límite de seguridad
+                .map(paper => ({
+                    title: truncateText(paper.title || '', 300),
+                    authors: Array.isArray(paper.authors) ? 
+                        paper.authors.slice(0, 10).map(a => truncateText(a.name || '', 100)) : [],
+                    date: paper.publicationDate || paper.year || null,
+                    abstract: truncateText(paper.abstract || '', 3000),
+                    url: sanitizeUrl(paper.url),
+                    doi: paper.externalIds && paper.externalIds.DOI ? 
+                        sanitizeDoi(paper.externalIds.DOI) : null
+                }));
+
         } catch (error) {
-            console.error("Could not fetch papers from Semantic Scholar:", error);
+            console.error("Error fetching from Semantic Scholar:", error);
             return [];
         }
     }
 
     async function searchArxiv() {
         const query = `(all:agri* AND all:"language model") OR (all:agri* AND all:"generative adversarial network") OR (all:agri* AND all:gan) OR (all:agri* AND all:vae)`;
-        const url = `http://export.arxiv.org/api/query?search_query=${encodeURIComponent(query)}&sortBy=submittedDate&sortOrder=descending&max_results=50`;
+        const encodedQuery = encodeURIComponent(query);
+        const url = `http://export.arxiv.org/api/query?search_query=${encodedQuery}&sortBy=submittedDate&sortOrder=descending&max_results=50`;
 
         try {
-            const response = await fetch(url);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+            const response = await fetch(url, {
+                method: 'GET',
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
             if (!response.ok) {
-                throw new Error(`ArXiv API error: ${response.status}`);
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
+
             const xmlText = await response.text();
+            
+            // Validar que sea XML válido
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            
+            if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
+                throw new Error('Invalid XML response');
+            }
+
             const entries = xmlDoc.getElementsByTagName("entry");
             const papers = [];
             
-            for (let entry of entries) {
-                const title = entry.getElementsByTagName("title")[0]?.textContent?.trim() || 'Untitled';
-                const abstract = entry.getElementsByTagName("summary")[0]?.textContent?.trim() || 'No abstract available.';
-                const authors = Array.from(entry.getElementsByTagName("author")).map(a => 
-                    a.getElementsByTagName("name")[0]?.textContent || 'Unknown'
-                );
-                const date = entry.getElementsByTagName("published")[0]?.textContent || 'N/A';
-                const url = entry.getElementsByTagName("id")[0]?.textContent || '';
-                const arxivId = url.split('/abs/')[1];
-                const doi = arxivId ? `10.48550/arXiv.${arxivId}` : null;
-                
-                papers.push({ 
-                    title, 
-                    authors: authors.length > 0 ? authors : ['Unknown'], 
-                    date, 
-                    abstract, 
-                    url, 
-                    doi,
-                    source: 'arXiv'
-                });
+            // Limitar número de entradas procesadas
+            const maxEntries = Math.min(entries.length, 50);
+            
+            for (let i = 0; i < maxEntries; i++) {
+                const entry = entries[i];
+                try {
+                    const title = entry.getElementsByTagName("title")[0]?.textContent?.trim() || '';
+                    const abstract = entry.getElementsByTagName("summary")[0]?.textContent?.trim() || '';
+                    const authors = Array.from(entry.getElementsByTagName("author"))
+                        .slice(0, 10) // Límite de autores
+                        .map(a => a.getElementsByTagName("name")[0]?.textContent?.trim() || '')
+                        .filter(name => name);
+                    const date = entry.getElementsByTagName("published")[0]?.textContent?.trim() || null;
+                    const url = entry.getElementsByTagName("id")[0]?.textContent?.trim() || '';
+                    
+                    const arxivId = url.split('/abs/')[1];
+                    const doi = arxivId ? sanitizeDoi(`10.48550/arXiv.${arxivId}`) : null;
+                    
+                    papers.push({ 
+                        title: truncateText(title, 300),
+                        authors,
+                        date,
+                        abstract: truncateText(abstract, 3000),
+                        url: sanitizeUrl(url),
+                        doi
+                    });
+                } catch (e) {
+                    console.warn('Error processing arXiv entry:', e);
+                    continue;
+                }
             }
+            
             return papers;
+            
         } catch (error) {
-            console.error("Could not fetch papers from arXiv:", error);
+            console.error("Error fetching from arXiv:", error);
             return [];
         }
     }
@@ -138,8 +348,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 searchArxiv()
             ]);
 
-            const allPapers = [...scholarPapers, ...arxivPapers];
+            allPapers = [...scholarPapers, ...arxivPapers];
             
+            initializeTimeline(allPapers);
+
             if (allPapers.length === 0) {
                 showErrorState('No papers could be loaded from the APIs. Please check your internet connection and try again.');
                 return;
@@ -153,37 +365,24 @@ document.addEventListener('DOMContentLoaded', () => {
             // Filtrar por fecha (papers desde 2025)
             const filterDate = new Date('2025-01-01');
             const filteredPapers = uniquePapers.filter(paper => {
-                if (!paper.date || paper.date === 'N/A') {
+                if (!paper.date || isNaN(new Date(paper.date))) {
                     return false;
                 }
                 const paperDate = new Date(paper.date);
-                return !isNaN(paperDate) && paperDate >= filterDate;
+                return paperDate >= filterDate;
             });
             
-            // Ordenar por fecha (más recientes primero)
-            filteredPapers.sort((a, b) => {
-                const dateA = new Date(a.date);
-                const dateB = new Date(b.date);
-                return dateB - dateA;
-            });
+            filteredPapers.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            paperGrid.innerHTML = '';
+            allPapers = filteredPapers;
             
-            if (filteredPapers.length === 0) {
-                paperGrid.innerHTML = `
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 4rem;">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">📚</div>
-                        <p style="font-size: 1.2rem; color: #848484; margin: 0;">No papers found matching the criteria</p>
-                        <p style="font-size: 1rem; color: #848484; margin: 0.5rem 0 0 0; opacity: 0.8;">Looking for papers published after January 2025</p>
-                    </div>
-                `;
+            initializeTimeline(allPapers);
+
+            if (allPapers.length === 0) {
+                paperGrid.innerHTML = '<p>No papers found matching the criteria (published after January 2025).</p>';
                 return;
             }
-
-            // Crear las tarjetas con animación escalonada
-            filteredPapers.forEach((paper, index) => {
-                setTimeout(() => createPaperCard(paper), index * 100);
-            });
+            displayPapers(allPapers);
 
         } catch (error) {
             console.error('Error loading papers:', error);
@@ -191,73 +390,91 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function displayPapers(papers) {
+        paperGrid.innerHTML = '';
+        if (papers.length === 0) {
+            paperGrid.innerHTML = '<p>No papers found matching the selected criteria.</p>';
+            return;
+        }
+        papers.forEach(createPaperCard);
+    }
+
     function createPaperCard(paper) {
         const card = document.createElement('div');
         card.className = 'paper-card';
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(20px)';
         
-        const authors = Array.isArray(paper.authors) ? paper.authors.join(', ') : 'N/A';
-        const date = paper.date && paper.date !== 'N/A' ? new Date(paper.date).toLocaleDateString('en-GB', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        }) : 'Date not available';
-        const doiText = paper.doi ? `DOI: ${paper.doi}` : 'DOI: Not available';
-        const sourceTag = paper.source ? `<span style="background: #ECF6CE; color: #2c2c2c; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500;">${paper.source}</span>` : '';
+        // Sanitizar datos
+        const safeTitle = escapeHtml(truncateText(paper.title, 200));
+        const safeAuthors = escapeHtml(truncateText(Array.isArray(paper.authors) ? paper.authors.join(', ') : 'N/A', 150));
+        const safeDate = paper.date ? escapeHtml(new Date(paper.date).toLocaleDateString()) : 'N/A';
+        const safeDoi = sanitizeDoi(paper.doi);
 
-        card.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                <h3 style="margin: 0; flex: 1;">${paper.title}</h3>
-                ${sourceTag}
-            </div>
-            <p style="margin: 0.5rem 0; font-weight: 500;">${authors}</p>
-            <p style="margin: 0.5rem 0; color: #848484;">${date}</p>
-            <p class="paper-doi">${doiText}</p>
-        `;
-        
-        card.addEventListener('click', () => openModal({ ...paper, authors, date }));
-        
-        // Añadir efecto de aparición suave
-        card.addEventListener('mouseenter', () => {
-            card.style.transform = 'translateY(-8px) scale(1.02)';
-        });
-        
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = 'translateY(-8px) scale(1)';
-        });
+        // Crear elementos de forma segura
+        const titleElement = document.createElement('h3');
+        titleElement.textContent = paper.title || 'Untitled';
+
+        const authorsElement = document.createElement('p');
+        authorsElement.textContent = Array.isArray(paper.authors) ? paper.authors.join(', ') : 'N/A';
+
+        const dateElement = document.createElement('p');
+        dateElement.textContent = safeDate;
+
+        // Añadir elementos al card
+        card.appendChild(titleElement);
+        card.appendChild(authorsElement);
+        card.appendChild(dateElement);
+
+        // DOI solo si es válido
+        if (safeDoi) {
+            const doiElement = document.createElement('p');
+            doiElement.className = 'paper-doi';
+            doiElement.textContent = safeDoi;
+            card.appendChild(doiElement);
+        }
+
+        card.addEventListener('click', () => openModal({ 
+            ...paper, 
+            title: paper.title || 'Untitled',
+            authors: Array.isArray(paper.authors) ? paper.authors.join(', ') : 'N/A',
+            date: safeDate 
+        }));
         
         paperGrid.appendChild(card);
-        
-        // Animación de aparición
-        setTimeout(() => {
-            card.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-        }, 50);
     }
 
     function openModal(paper) {
-        modalTitle.textContent = paper.title;
-        modalAuthors.textContent = 'Authors: ' + paper.authors;
-        modalDate.textContent = 'Published: ' + paper.date;
+        // Sanitizar todos los datos del modal
+        modalTitle.textContent = truncateText(paper.title || 'Untitled', 300);
+        modalAuthors.textContent = 'Authors: ' + truncateText(paper.authors || 'N/A', 200);
+        modalDate.textContent = 'Date: ' + (paper.date || 'N/A');
 
-        if (paper.doi && paper.doi !== 'DOI: Not available') {
-            const doiValue = paper.doi.replace('DOI: ', '');
-            modalDoi.innerHTML = `DOI: <a href="https://doi.org/${doiValue}" target="_blank" style="color: #F4FA58; text-decoration: none;">${doiValue}</a>`;
+        const safeDoi = sanitizeDoi(paper.doi);
+        if (safeDoi) {
+            // Crear enlace DOI de forma segura
+            modalDoi.innerHTML = '';
+            const doiLink = document.createElement('a');
+            doiLink.href = `https://doi.org/${safeDoi}`;
+            doiLink.target = '_blank';
+            doiLink.rel = 'noopener noreferrer'; // Seguridad adicional
+            doiLink.textContent = safeDoi;
+            modalDoi.appendChild(doiLink);
+            modalDoi.style.display = 'block';
         } else {
-            modalDoi.textContent = 'DOI: Not available';
+            modalDoi.style.display = 'none';
         }
 
-        modalAbstract.textContent = paper.abstract || 'No abstract available.';
-        modalLink.href = paper.url || '#';
-        modalLink.textContent = paper.url ? 'Read Full Paper' : 'Link not available';
+        modalAbstract.textContent = truncateText(paper.abstract || 'No abstract available.', 2000);
         
+        const safeUrl = sanitizeUrl(paper.url);
+        modalLink.href = safeUrl;
+        if (safeUrl === '#') {
+            modalLink.style.display = 'none';
+        } else {
+            modalLink.style.display = 'inline-block';
+            modalLink.rel = 'noopener noreferrer'; // Seguridad adicional
+        }
+
         modal.style.display = 'block';
-        document.body.style.overflow = 'hidden'; // Prevenir scroll del body
-        
-        // Focus en el modal para accesibilidad
-        modal.focus();
     }
 
     function closeModal() {
@@ -280,6 +497,11 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal();
         }
     });
+
+    // Event listeners for timeline
+    dateSliderMin.addEventListener('input', updateDateRange);
+    dateSliderMax.addEventListener('input', updateDateRange);
+    resetButton.addEventListener('click', resetTimeline);
 
     // Inicializar la carga de papers
     loadAllPapers();
