@@ -12,7 +12,7 @@ The application automatically fetches recent publications from leading academic 
 
 This work is part of the PhD thesis by:
 
--   **PhD Candidate:** Dra Beatriz Vallina
+-   **PhD Candidate:** Beatriz Vallina
 -   **Institution:** Agrifood Economics, Universitat Politècnica de València
 
 Supervised by:
