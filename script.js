@@ -487,75 +487,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function searchSemanticScholar() {
         const queries = [
-            // Generación de datos sintéticos
-            '(+"synthetic data generation" +"agriculture" +("generative adversarial network" | GAN | "large language model" | "diffusion model"))',
-            '(+"synthetic images" +("plant disease" | "crop disease" | "leaf disease" | "plant pathology"))',
-            '(+"data augmentation" +"precision agriculture" +("GAN" | "VAE" | "large language model" | "diffusion model"))',
-            
-            // Predicción y modelado
-            '(+"crop yield prediction" +("generative adversarial network" | "diffusion model" | "large language model"))',
-            '(+"weather forecasting" +"agriculture" +"generative AI")',
-            '(+"soil analysis" +("synthetic data" | "generative model" | "large language model"))',
-            
-            // Automatización y robótica
-            '(+"robot grasping" +("fruit" | "vegetable" | "crop") +("generative model" | "simulation"))',
-            '(+"path planning" +"autonomous tractor" +("GAN" | "VAE" | "large language model" | "diffusion model"))',
-            '(+"agricultural robot" +("synthetic environment" | "generative simulation" | "large language model"))',
-            
-            // Detección y monitoreo
-            '(+"pest detection" +("natural language processing" | "large language model" | "small language model") +report)',
-            '(+"disease detection" +("livestock" | "animal health") +("generative AI" | "large language model"))',
-            '(+"weed detection" +("synthetic images" | "generative adversarial network" | GAN))',
-            
-            // Asistentes virtuales y LLMs
-            '(+"large language model" +("farm management" | "agricultural advisory" | "farmer decision support"))',
-            '(+"chatbot" +("agriculture" | "farming") +("large language model" | "generative AI"))',
-            '(+"virtual assistant" +"precision agriculture" +"large language model")',
-            
-            // Seguridad alimentaria y calidad
-            '(+"food safety" +("generative model" | "large language model" | "synthetic data"))',
-            '(+"food quality" +"inspection" +("GAN" | "generative adversarial network" | "diffusion model"))',
-            '(+"traceability" +"food supply chain" +"large language model")',
-            
-            // Nutrición y ganadería
-            '(+"livestock monitoring" +("generative AI" | "large language model" | "synthetic data"))',
-            '(+"animal nutrition" +"optimization" +("generative model" | "large language model"))',
-            '(+"feed formulation" +("AI" | "large language model") +"optimization")',
-            
-            // Sostenibilidad y medio ambiente
-            '(+"sustainable agriculture" +("generative AI" | "large language model" | "simulation"))',
-            '(+"carbon footprint" +"agriculture" +"large language model")',
-            '(+"climate simulation" +"crop modeling" +("generative model" | "diffusion model"))',
-            
-            // IoT y sensores
-            '(+"IoT sensors" +"agriculture" +("synthetic data" | "generative model" | "large language model"))',
-            '(+"sensor fusion" +"precision agriculture" +"generative AI")',
-            
-            // Agricultura vertical e hidropónica
-            '(+"vertical farming" +("generative AI" | "large language model" | "optimization"))',
-            '(+"hydroponics" +"control system" +("generative model" | "large language model"))',
-            
-            // Mejoramiento genético
-            '(+"plant breeding" +("generative AI" | "large language model" | "genetic algorithm"))',
-            '(+"crop genetics" +"sequence generation" +("generative model" | "large language model"))',
-            
-            // General
-            '(+"generative AI" +"agri-food")',
-            '(+"generative AI" +"agrifood")',
-            '(+"generative AI" +"food industry")',
-            '(+"synthetic images" +("plant disease" | "crop disease" | "leaf disease"))',
-            '(+"data augmentation" +"precision agriculture" +("GAN" | "VAE"))',
-            '(+"crop yield prediction" +("generative adversarial network" | "diffusion model"))',
-            '(+"weather forecasting" +"agriculture" +"generative AI")',
-            '(+"large language model" +("farm management" | "agricultural advisory" | "farmer decision support"))',
-            '(+"generative AI" +"agriculture" +("generative adversarial network"))',
-            '(+"synthetic data generation" +"agriculture" +("generative adversarial network"))',
+            // Versión simplificada para evitar queries demasiado complejas
+            'synthetic data agriculture',
+            'generative AI agriculture',
+            'large language model agriculture',
+            'plant disease synthetic images',
+            'crop yield prediction generative',
+            'precision agriculture synthetic',
+            'agricultural robot generative',
+            'food safety generative AI',
+            'livestock monitoring AI',
+            'vertical farming generative',
+            'plant breeding generative',
+            'generative adversarial network agriculture',
+            'diffusion model agriculture',
+            'farm management language model',
+            'agricultural advisory AI',
+            'generative AI agrifood',
+            'synthetic data generation farming',
+            'AI agriculture generative model'
         ];
         
         const query = queries.join(' | ');
         const fields = 'title,authors,year,abstract,url,publicationDate,externalIds';
         const encodedQuery = encodeURIComponent(query);
         const url = `https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=${encodedQuery}&fields=${fields}&limit=100`;
+        
+        console.log('Semantic Scholar query length:', query.length);
+        console.log('Semantic Scholar URL:', url.substring(0, 200) + '...');
 
         try {
             const controller = new AbortController();
@@ -577,12 +536,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             
+            console.log('Semantic Scholar response status:', response.status);
+            console.log('Semantic Scholar response data keys:', Object.keys(data));
+            
             // Validar estructura de respuesta
             if (!data || typeof data !== 'object') {
                 throw new Error('Invalid response format');
             }
 
             const papers = data.data || data || [];
+            console.log('Semantic Scholar raw papers count:', papers.length);
             
             // Validar y sanitizar cada paper
             return papers
@@ -606,14 +569,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error("Error fetching from Semantic Scholar:", error);
+            console.error("Error type:", error.name);
+            console.error("Error message:", error.message);
             return [];
         }
     }
 
     async function searchArxiv() {
-        const query = `(all:agri* AND all:"language model") OR (all:agri* AND all:"generative adversarial network") OR (all:agri* AND all:gan) OR (all:agri* AND all:vae) OR (all:"food safety" AND all:"generative") OR (all:"precision agriculture" AND all:"synthetic") OR (all:"livestock" AND all:"generative AI") OR (all:"crop yield" AND all:"diffusion model") OR (all:"plant disease" AND all:"synthetic images") OR (all:"farm management" AND all:"large language model") OR (all:"vertical farming" AND all:"generative") OR (all:"soil analysis" AND all:"synthetic data") OR (all:"agricultural robot" AND all:"generative") OR (all:"food supply chain" AND all:"language model")`;
+        const query = `(all:agriculture AND all:"generative AI") OR (all:agriculture AND all:"synthetic data") OR (all:agriculture AND all:"language model") OR (all:farming AND all:"generative") OR (all:agri* AND all:GAN) OR (all:"food safety" AND all:"generative") OR (all:"precision agriculture") OR (all:"plant disease" AND all:"synthetic")`;
         const encodedQuery = encodeURIComponent(query);
         const url = `https://export.arxiv.org/api/query?search_query=${encodedQuery}&sortBy=submittedDate&sortOrder=descending&max_results=100`;
+        
+        console.log('ArXiv query length:', query.length);
+        console.log('ArXiv URL:', url.substring(0, 200) + '...');
 
         try {
             const controller = new AbortController();
@@ -632,6 +600,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const xmlText = await response.text();
             
+            console.log('ArXiv response status:', response.status);
+            console.log('ArXiv response length:', xmlText.length);
+            
             // Validar que sea XML válido
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, "text/xml");
@@ -641,6 +612,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const entries = xmlDoc.getElementsByTagName("entry");
+            console.log('ArXiv entries found:', entries.length);
             const papers = [];
             
             // Limitar número de entradas procesadas
@@ -659,7 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const url = entry.getElementsByTagName("id")[0]?.textContent?.trim() || '';
                     
                     const arxivId = url.split('/abs/')[1];
-                    const doi = arxivId ? sanitizeDoi(`10.48550/arXiv.${arxivId}`) : null;
+                    const doi = null; // Los papers de arXiv no tienen DOI real
                     
                     const processedPaper = { 
                         title: truncateText(title, 300),
@@ -667,7 +639,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         date,
                         abstract: truncateText(abstract, 3000),
                         url: sanitizeUrl(url),
-                        doi
+                        doi: null, // No DOI para arXiv
+                        source: 'arXiv' // Añadir identificador de origen
                     };
                     
                     // Añadir categorías automáticamente
@@ -683,6 +656,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
         } catch (error) {
             console.error("Error fetching from arXiv:", error);
+            console.error("Error type:", error.name);
+            console.error("Error message:", error.message);
             return [];
         }
     }
@@ -696,9 +671,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 searchArxiv()
             ]);
 
+            console.log('Semantic Scholar papers:', scholarPapers.length);
+            console.log('ArXiv papers:', arxivPapers.length);
+
             allPapers = [...scholarPapers, ...arxivPapers];
 
+            console.log('Total papers before filtering:', allPapers.length);
+
             if (allPapers.length === 0) {
+                console.log('No papers found from APIs');
                 showErrorState('No papers could be loaded from the APIs. Please check your internet connection and try again.');
                 return;
             }
@@ -708,8 +689,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 new Map(allPapers.map(p => [p.title.toLowerCase().trim(), p])).values()
             );
 
-            // Filtrar por fecha (papers desde 2025)
-            const filterDate = new Date('2025-01-01');
+            console.log('Unique papers after deduplication:', uniquePapers.length);
+
+            // Filtrar por fecha (papers desde 2023)
+            const filterDate = new Date('2023-01-01');
             const filteredPapers = uniquePapers.filter(paper => {
                 if (!paper.date || isNaN(new Date(paper.date))) {
                     return false;
@@ -717,6 +700,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const paperDate = new Date(paper.date);
                 return paperDate >= filterDate;
             });
+            
+            console.log('Papers after date filtering (2023+):', filteredPapers.length);
             
             filteredPapers.sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -726,7 +711,7 @@ document.addEventListener('DOMContentLoaded', () => {
             initializeCategoryFilters(); // Inicializar filtros de categorías
 
             if (allPapers.length === 0) {
-                paperGrid.innerHTML = '<p>No papers found matching the criteria (published after January 2025).</p>';
+                paperGrid.innerHTML = '<p>No papers found matching the criteria (published after January 2023).</p>';
                 return;
             }
             applyFilters(); // Usar filtros en lugar de displayPapers directo
