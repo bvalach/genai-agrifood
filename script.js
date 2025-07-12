@@ -537,7 +537,19 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Mejoramiento genético
             '(+"plant breeding" +("generative AI" | "large language model" | "genetic algorithm"))',
-            '(+"crop genetics" +"sequence generation" +("generative model" | "large language model"))'
+            '(+"crop genetics" +"sequence generation" +("generative model" | "large language model"))',
+            
+            // General
+            '(+"generative AI" +"agri-food")',
+            '(+"generative AI" +"agrifood")',
+            '(+"generative AI" +"food industry")',
+            '(+"synthetic images" +("plant disease" | "crop disease" | "leaf disease"))',
+            '(+"data augmentation" +"precision agriculture" +("GAN" | "VAE"))',
+            '(+"crop yield prediction" +("generative adversarial network" | "diffusion model"))',
+            '(+"weather forecasting" +"agriculture" +"generative AI")',
+            '(+"large language model" +("farm management" | "agricultural advisory" | "farmer decision support"))',
+            '(+"generative AI" +"agriculture" +("generative adversarial network"))',
+            '(+"synthetic data generation" +"agriculture" +("generative adversarial network"))',
         ];
         
         const query = queries.join(' | ');
@@ -601,7 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function searchArxiv() {
         const query = `(all:agri* AND all:"language model") OR (all:agri* AND all:"generative adversarial network") OR (all:agri* AND all:gan) OR (all:agri* AND all:vae) OR (all:"food safety" AND all:"generative") OR (all:"precision agriculture" AND all:"synthetic") OR (all:"livestock" AND all:"generative AI") OR (all:"crop yield" AND all:"diffusion model") OR (all:"plant disease" AND all:"synthetic images") OR (all:"farm management" AND all:"large language model") OR (all:"vertical farming" AND all:"generative") OR (all:"soil analysis" AND all:"synthetic data") OR (all:"agricultural robot" AND all:"generative") OR (all:"food supply chain" AND all:"language model")`;
         const encodedQuery = encodeURIComponent(query);
-        const url = `http://export.arxiv.org/api/query?search_query=${encodedQuery}&sortBy=submittedDate&sortOrder=descending&max_results=100`;
+        const url = `https://export.arxiv.org/api/query?search_query=${encodedQuery}&sortBy=submittedDate&sortOrder=descending&max_results=100`;
 
         try {
             const controller = new AbortController();
