@@ -17,7 +17,7 @@ This work is part of the PhD thesis by:
 
 Supervised by:
 
--   Dr Roberto Cervelló
+-   Dr Roberto Cervelló-Royo
 -   Dr Juan José Lull
 
 ### Features
