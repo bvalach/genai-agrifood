@@ -589,7 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function searchArxiv() {
-        const query = `(all:agriculture AND all:"generative AI") OR (all:agriculture AND all:"synthetic data") OR (all:agriculture AND all:"language model") OR (all:farming AND all:"generative") OR (all:agri* AND all:GAN) OR (all:"food safety" AND all:"generative") OR (all:"precision agriculture") OR (all:"plant disease" AND all:"synthetic")`;
+        const query = `(all:agriculture AND all:"generative AI") OR (all:"food industry" AND all:"generative AI") OR (all:"food manufacturing" AND all:"generative AI") OR (all:agriculture AND all:"synthetic data") OR (all:agriculture AND all:"language model") OR (all:farming AND all:"generative ai") OR (all:agri* AND all:GAN) OR (all:"food safety" AND all:"generative AI") OR (all:"food quality" AND all:"generative AI")`;
         const encodedQuery = encodeURIComponent(query);
         const url = `https://export.arxiv.org/api/query?search_query=${encodedQuery}&sortBy=submittedDate&sortOrder=descending&max_results=100`;
         
