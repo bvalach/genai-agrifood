@@ -487,7 +487,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function searchSemanticScholar() {
         const queries = [
-            // Versión simplificada para evitar queries demasiado complejas
             'generative AI agriculture',
             'generative AI food industry',
             'generative AI food manufacturing',
@@ -500,7 +499,6 @@ document.addEventListener('DOMContentLoaded', () => {
             'small language model food manufacturing',
             'small language model agrifood',
             'plant disease synthetic images',
-            'crop yield prediction generative',
             'precision agriculture synthetic',
             'agricultural robot generative',
             'food safety generative AI',
@@ -521,67 +519,155 @@ document.addEventListener('DOMContentLoaded', () => {
             'synthetic data agriculture',
         ];
         
-        const query = queries.join(' | ');
+        const allPapers = [];
         const fields = 'title,authors,year,abstract,url,publicationDate,externalIds';
-        const encodedQuery = encodeURIComponent(query);
-        const url = `https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=${encodedQuery}&fields=${fields}&limit=100`;
-        
-        console.log('Semantic Scholar query length:', query.length);
-        console.log('Semantic Scholar URL:', url.substring(0, 200) + '...');
+
+        console.log(`Starting Semantic Scholar search with ${queries.length} individual queries.`);
 
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+            for (const query of queries) {
+                const encodedQuery = encodeURIComponent(query);
+                const url = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodedQuery}&fields=${fields}&limit=50&year=2023-`;
 
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                },
-                signal: controller.signal
-            });
+                console.log(`Querying Semantic Scholar for: "${query}"`);
 
-            clearTimeout(timeoutId);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            
-            console.log('Semantic Scholar response status:', response.status);
-            console.log('Semantic Scholar response data keys:', Object.keys(data));
-            
-            // Validar estructura de respuesta
-            if (!data || typeof data !== 'object') {
-                throw new Error('Invalid response format');
-            }
-
-            const papers = data.data || data || [];
-            console.log('Semantic Scholar raw papers count:', papers.length);
-            
-            // Validar y sanitizar cada paper
-            return papers
-                .filter(paper => paper && typeof paper === 'object')
-                .slice(0, 100) // Límite de seguridad aumentado
-                .map(paper => {
-                    const processedPaper = {
-                        title: truncateText(paper.title || '', 300),
-                        authors: Array.isArray(paper.authors) ? 
-                            paper.authors.slice(0, 10).map(a => truncateText(a.name || '', 100)) : [],
-                        date: paper.publicationDate || paper.year || null,
-                        abstract: truncateText(paper.abstract || '', 3000),
-                        url: sanitizeUrl(paper.url),
-                        doi: paper.externalIds && paper.externalIds.DOI ? 
-                            sanitizeDoi(paper.externalIds.DOI) : null
-                    };
-                    // Añadir categorías automáticamente
-                    processedPaper.categories = categorizePaper(processedPaper);
-                    return processedPaper;
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    signal: controller.signal
                 });
 
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    console.warn(`Semantic Scholar query for "${query}" failed with status: ${response.status}`);
+                    continue; // Skip to the next query if this one fails
+                }
+
+                const data = await response.json();
+                
+                if (data && data.data) {
+                    const papers = data.data.map(paper => {
+                        const processedPaper = {
+                            title: truncateText(paper.title || '', 300),
+                            authors: Array.isArray(paper.authors) ? paper.authors.slice(0, 10).map(a => truncateText(a.name || '', 100)) : [],
+                            date: paper.publicationDate || (paper.year ? `${paper.year}-01-01` : null),
+                            abstract: truncateText(paper.abstract || '', 3000),
+                            url: sanitizeUrl(paper.url),
+                            doi: paper.externalIds && paper.externalIds.DOI ? sanitizeDoi(paper.externalIds.DOI) : null,
+                            source: 'SemanticScholar'
+                        };
+                        processedPaper.categories = categorizePaper(processedPaper);
+                        return processedPaper;
+                    });
+                    allPapers.push(...papers);
+                }
+
+                // Small delay to be polite to the API
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            console.log('Semantic Scholar total papers found:', allPapers.length);
+            return allPapers;
+
         } catch (error) {
-            console.error("Error fetching from Semantic Scholar:", error);
+            console.error("Error during Semantic Scholar fetch loop:", error);
+            return allPapers; // Return what we have so far
+        }
+    }
+
+    
+    async function searchCrossref() {
+        const queries = [
+            'generative AI agriculture',
+            'generative AI food industry',
+            'language model agriculture',
+            'synthetic data agriculture',
+            'generative AI agrifood',
+            // Añade más consultas, quizás más amplias o sin "AI" si quieres probar la amplitud
+            'agrifood deep learning', 
+            'agriculture AI',
+            'food processing automation' 
+        ];
+        
+        const allPapers = [];
+        const mailto = "bvalach@doctor.upv.es"; // Good practice for Crossref polite pool
+    
+        console.log("Starting Crossref search.");
+    
+        try {
+            for (const query of queries) {
+                const encodedQuery = encodeURIComponent(query);
+                // **CAMBIO CLAVE:** Usar 'query' en lugar de 'query.bibliographic' para una búsqueda más amplia
+                const url = `https://api.crossref.org/works?query=${encodedQuery}&rows=100&filter=from-pub-date:2023-01-01&mailto=${mailto}`;
+                
+                console.log(`Querying Crossref for: "${query}"`);
+                console.log('Crossref URL:', url); // Log the full URL for debugging
+    
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => {
+                    controller.abort();
+                    console.warn(`Crossref query for "${query}" timed out.`);
+                }, 15000); // Increased timeout to 15 seconds
+    
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+    
+                if (!response.ok) {
+                    console.warn(`Crossref query for "${query}" failed with status: ${response.status} - ${response.statusText}`);
+                    const errorText = await response.text();
+                    console.warn('Crossref error response body:', errorText);
+                    continue; // Skip to the next query
+                }
+    
+                const data = await response.json();
+                console.log(`Crossref response for "${query}":`, data); // Log the full data response
+    
+                if (data.status === 'ok' && data.message && data.message.items) {
+                    console.log(`Found ${data.message.items.length} items for "${query}"`);
+                    const papers = data.message.items.map(item => {
+                        const authors = item.author ? item.author.map(a => `${a.given || ''} ${a.family || ''}`).filter(name => name.trim()) : [];
+                        
+                        let publicationDate = null;
+                        if (item.published && item.published['date-parts'] && item.published['date-parts'][0]) {
+                            // Ensure date parts exist before trying to construct a date
+                            const year = item.published['date-parts'][0][0];
+                            const month = item.published['date-parts'][0][1] || 1; // Default to Jan if month is missing
+                            const day = item.published['date-parts'][0][2] || 1;   // Default to 1st if day is missing
+                            publicationDate = new Date(Date.UTC(year, month - 1, day)); // Month is 0-indexed for Date
+                        }
+                        const isValidDate = publicationDate && !isNaN(publicationDate);
+    
+                        const processedPaper = {
+                            title: item.title && item.title.length > 0 ? item.title[0] : 'No title available',
+                            authors: authors,
+                            date: isValidDate ? publicationDate.toISOString().split('T')[0] : null,
+                            // Crossref abstract is often HTML, might need stripping
+                            abstract: item.abstract ? truncateText(item.abstract.replace(/<\/?[^>]+(>|$)/g, ""), 3000) : 'No abstract available.',
+                            url: sanitizeUrl(item.URL), // Use item.URL for direct link
+                            doi: item.DOI ? sanitizeDoi(item.DOI) : null,
+                            source: 'Crossref'
+                        };
+                        processedPaper.categories = categorizePaper(processedPaper);
+                        return processedPaper;
+                    }).filter(p => p.date); // Only keep papers with a valid date
+    
+                    console.log(`Processed ${papers.length} valid papers from Crossref for "${query}"`);
+                    allPapers.push(...papers);
+                } else {
+                    console.log(`No items or status not 'ok' for "${query}":`, data);
+                }
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Be polite to the API
+            }
+            
+            console.log('Crossref search completed. Total unique papers from Crossref:', allPapers.length);
+            return allPapers;
+    
+        } catch (error) {
+            console.error("Error fetching from Crossref:", error);
             console.error("Error type:", error.name);
             console.error("Error message:", error.message);
             return [];
@@ -679,15 +765,17 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoadingState();
         
         try {
-            const [scholarPapers, arxivPapers] = await Promise.all([
+            const [scholarPapers, arxivPapers, crossrefPapers] = await Promise.all([
                 searchSemanticScholar(),
-                searchArxiv()
+                searchArxiv(),
+                searchCrossref()
             ]);
 
             console.log('Semantic Scholar papers:', scholarPapers.length);
             console.log('ArXiv papers:', arxivPapers.length);
+            console.log('Crossref papers:', crossrefPapers.length);
 
-            allPapers = [...scholarPapers, ...arxivPapers];
+            allPapers = [...scholarPapers, ...arxivPapers, ...crossrefPapers];
 
             console.log('Total papers before filtering:', allPapers.length);
 
@@ -764,12 +852,39 @@ document.addEventListener('DOMContentLoaded', () => {
         const dateElement = document.createElement('p');
         dateElement.textContent = safeDate;
 
-        // Añadir categorías si existen
+        // Añadir etiquetas de fuente y categoría
+        const tagsContainer = document.createElement('div');
+        tagsContainer.className = 'paper-tags';
+        tagsContainer.style.cssText = 'margin-top: 0.5rem; margin-bottom: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;';
+
+        if (paper.source) {
+            const sourceTag = document.createElement('span');
+            sourceTag.className = 'source-tag';
+            sourceTag.textContent = paper.source;
+            sourceTag.style.cssText = `
+                padding: 0.2rem 0.6rem;
+                border-radius: 12px;
+                font-size: 0.75rem;
+                font-weight: 600;
+            `;
+
+            let bgColor, fgColor;
+            switch (paper.source) {
+                case 'arXiv':
+                    bgColor = '#FDECDF'; fgColor = '#B75C09'; break;
+                case 'SemanticScholar':
+                    bgColor = '#DDEBFF'; fgColor = '#0052CC'; break;
+                case 'Crossref':
+                    bgColor = '#E3FCEF'; fgColor = '#006644'; break;
+                default:
+                    bgColor = '#EBECF0'; fgColor = '#42526E';
+            }
+            sourceTag.style.backgroundColor = bgColor;
+            sourceTag.style.color = fgColor;
+            tagsContainer.appendChild(sourceTag);
+        }
+        
         if (paper.categories && paper.categories.length > 0) {
-            const categoriesElement = document.createElement('div');
-            categoriesElement.className = 'paper-categories';
-            categoriesElement.style.cssText = 'margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.25rem;';
-            
             paper.categories.forEach(category => {
                 const categoryTag = document.createElement('span');
                 categoryTag.className = 'category-tag';
@@ -782,10 +897,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     font-size: 0.75rem;
                     font-weight: 500;
                 `;
-                categoriesElement.appendChild(categoryTag);
+                tagsContainer.appendChild(categoryTag);
             });
-            
-            card.appendChild(categoriesElement);
+        }
+        
+        if (tagsContainer.hasChildNodes()) {
+            card.appendChild(tagsContainer);
         }
 
         // Añadir elementos al card
