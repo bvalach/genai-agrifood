@@ -85,11 +85,11 @@ document.addEventListener('DOMContentLoaded', () => {
         'Crop Prediction': ['crop yield', 'yield prediction', 'weather forecasting', 'climate simulation'],
         'Robotics & Automation': ['robot', 'autonomous', 'path planning', 'grasping', 'agricultural robot'],
         'Livestock & Animal Health': ['livestock', 'animal health', 'animal nutrition', 'feed formulation'],
-        'Food Safety & Quality': ['food safety', 'food quality', 'inspection', 'traceability', 'supply chain'],
+        'Food Safety & Quality': ['food safety', 'food security', 'food quality', 'inspection', 'traceability', 'supply chain'],
         'Sustainability': ['sustainable agriculture', 'carbon footprint', 'climate', 'environmental'],
         'Smart Agriculture': ['precision agriculture', 'IoT sensors', 'sensor fusion', 'vertical farming', 'hydroponics'],
-        'AI Assistants': ['large language model', 'chatbot', 'virtual assistant', 'farm management', 'advisory'],
-        'Plant Breeding': ['plant breeding', 'crop genetics', 'genetic algorithm', 'sequence generation']
+        'AI Assistants': ['large language model', 'chatbot', 'virtual assistant', 'farm management', 'advisory', 'AI-powered'],
+        'Plant Breeding': ['plant breeding', 'crop genetics', 'genetic algorithm', 'sequence generation', 'genetic engineering']
     };
 
     // Función para auto-etiquetar papers
@@ -488,24 +488,37 @@ document.addEventListener('DOMContentLoaded', () => {
     async function searchSemanticScholar() {
         const queries = [
             // Versión simplificada para evitar queries demasiado complejas
-            'synthetic data agriculture',
             'generative AI agriculture',
+            'generative AI food industry',
+            'generative AI food manufacturing',
             'large language model agriculture',
+            'small language model agriculture',
+            'large language model food industry',
+            'large language model food manufacturing',
+            'large language model agrifood',
+            'small language model food industry',
+            'small language model food manufacturing',
+            'small language model agrifood',
             'plant disease synthetic images',
             'crop yield prediction generative',
             'precision agriculture synthetic',
             'agricultural robot generative',
             'food safety generative AI',
+            'generative AI food quality',
             'livestock monitoring AI',
-            'vertical farming generative',
-            'plant breeding generative',
+            'vertical farming generative AI',
+            'plant breeding generative AI',
             'generative adversarial network agriculture',
+            'generative adversarial network food industry',
+            'generative adversarial network food manufacturing',
             'diffusion model agriculture',
+            'diffusion model food manufacturing',
             'farm management language model',
             'agricultural advisory AI',
             'generative AI agrifood',
             'synthetic data generation farming',
-            'AI agriculture generative model'
+            'AI agriculture generative model',
+            'synthetic data agriculture',
         ];
         
         const query = queries.join(' | ');
