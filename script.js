@@ -323,10 +323,10 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             localStorage.setItem('foodAI-living-review', JSON.stringify(saveData));
-            showSaveStatus('Data saved locally!');
+            // No mostrar mensaje al guardar automáticamente
         } catch (error) {
             console.error('Error saving locally:', error);
-            showSaveStatus('Error saving locally', false);
+            showSaveStatus('Error saving data automatically', false);
         }
     }
 
@@ -334,8 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const savedData = localStorage.getItem('foodAI-living-review');
             if (!savedData) {
-                showSaveStatus('No saved data found', false);
-                return;
+                return null;
             }
 
             const data = JSON.parse(savedData);
@@ -348,10 +347,14 @@ document.addEventListener('DOMContentLoaded', () => {
             initializeCategoryFilters();
             applyFilters();
 
-            showSaveStatus(`Loaded ${allPapers.length} papers from ${new Date(data.timestamp).toLocaleDateString()}`);
+            showSaveStatus(`Loaded ${allPapers.length} papers from cache.`, true);
+            return data; // Devolver los datos cargados
+
         } catch (error) {
             console.error('Error loading from local:', error);
-            showSaveStatus('Error loading saved data', false);
+            showSaveStatus('Error loading cached data', false);
+            localStorage.removeItem('foodAI-living-review'); // Limpiar caché corrupta
+            return null;
         }
     }
 
@@ -595,72 +598,79 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const allPapers = [];
         const mailto = "bvalach@doctor.upv.es"; // Good practice for Crossref polite pool
-    
+        const maxRetries = 3;
+        const retryDelay = 2000; // 2 seconds
+
         console.log("Starting Crossref search.");
     
         try {
             for (const query of queries) {
-                const encodedQuery = encodeURIComponent(query);
-                // **CAMBIO CLAVE:** Usar 'query' en lugar de 'query.bibliographic' para una búsqueda más amplia
-                const url = `https://api.crossref.org/works?query=${encodedQuery}&rows=100&filter=from-pub-date:2023-01-01&mailto=${mailto}`;
-                
-                console.log(`Querying Crossref for: "${query}"`);
-                console.log('Crossref URL:', url); // Log the full URL for debugging
-    
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => {
-                    controller.abort();
-                    console.warn(`Crossref query for "${query}" timed out.`);
-                }, 15000); // Increased timeout to 15 seconds
-    
-                const response = await fetch(url, { signal: controller.signal });
-                clearTimeout(timeoutId);
-    
-                if (!response.ok) {
-                    console.warn(`Crossref query for "${query}" failed with status: ${response.status} - ${response.statusText}`);
-                    const errorText = await response.text();
-                    console.warn('Crossref error response body:', errorText);
-                    continue; // Skip to the next query
-                }
-    
-                const data = await response.json();
-                console.log(`Crossref response for "${query}":`, data); // Log the full data response
-    
-                if (data.status === 'ok' && data.message && data.message.items) {
-                    console.log(`Found ${data.message.items.length} items for "${query}"`);
-                    const papers = data.message.items.map(item => {
-                        const authors = item.author ? item.author.map(a => `${a.given || ''} ${a.family || ''}`).filter(name => name.trim()) : [];
+                let success = false;
+                for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                    try {
+                        const encodedQuery = encodeURIComponent(query);
+                        const url = `https://api.crossref.org/works?query=${encodedQuery}&rows=100&filter=from-pub-date:2023-01-01&mailto=${mailto}`;
                         
-                        let publicationDate = null;
-                        if (item.published && item.published['date-parts'] && item.published['date-parts'][0]) {
-                            // Ensure date parts exist before trying to construct a date
-                            const year = item.published['date-parts'][0][0];
-                            const month = item.published['date-parts'][0][1] || 1; // Default to Jan if month is missing
-                            const day = item.published['date-parts'][0][2] || 1;   // Default to 1st if day is missing
-                            publicationDate = new Date(Date.UTC(year, month - 1, day)); // Month is 0-indexed for Date
+                        console.log(`Querying Crossref for: "${query}" (Attempt ${attempt})`);
+                        
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => {
+                            controller.abort();
+                            console.warn(`Crossref query for "${query}" timed out.`);
+                        }, 15000);
+
+                        const response = await fetch(url, { signal: controller.signal });
+                        clearTimeout(timeoutId);
+
+                        if (!response.ok) {
+                            throw new Error(`Crossref query failed with status: ${response.status}`);
                         }
-                        const isValidDate = publicationDate && !isNaN(publicationDate);
-    
-                        const processedPaper = {
-                            title: item.title && item.title.length > 0 ? item.title[0] : 'No title available',
-                            authors: authors,
-                            date: isValidDate ? publicationDate.toISOString().split('T')[0] : null,
-                            // Crossref abstract is often HTML, might need stripping
-                            abstract: item.abstract ? truncateText(item.abstract.replace(/<\/?[^>]+(>|$)/g, ""), 3000) : 'No abstract available.',
-                            url: sanitizeUrl(item.URL), // Use item.URL for direct link
-                            doi: item.DOI ? sanitizeDoi(item.DOI) : null,
-                            source: 'Crossref'
-                        };
-                        processedPaper.categories = categorizePaper(processedPaper);
-                        return processedPaper;
-                    }).filter(p => p.date); // Only keep papers with a valid date
-    
-                    console.log(`Processed ${papers.length} valid papers from Crossref for "${query}"`);
-                    allPapers.push(...papers);
-                } else {
-                    console.log(`No items or status not 'ok' for "${query}":`, data);
+
+                        const data = await response.json();
+                        
+                        if (data.status === 'ok' && data.message && data.message.items) {
+                            const papers = data.message.items.map(item => {
+                                const authors = item.author ? item.author.map(a => `${a.given || ''} ${a.family || ''}`).filter(name => name.trim()) : [];
+                                
+                                let publicationDate = null;
+                                if (item.published && item.published['date-parts'] && item.published['date-parts'][0]) {
+                                    const year = item.published['date-parts'][0][0];
+                                    const month = item.published['date-parts'][0][1] || 1;
+                                    const day = item.published['date-parts'][0][2] || 1;
+                                    publicationDate = new Date(Date.UTC(year, month - 1, day));
+                                }
+                                const isValidDate = publicationDate && !isNaN(publicationDate);
+
+                                const processedPaper = {
+                                    title: item.title && item.title.length > 0 ? item.title[0] : 'No title available',
+                                    authors: authors,
+                                    date: isValidDate ? publicationDate.toISOString().split('T')[0] : null,
+                                    abstract: item.abstract ? truncateText(item.abstract.replace(/<\/?[^>]+(>|$)/g, ""), 3000) : 'No abstract available.',
+                                    url: sanitizeUrl(item.URL),
+                                    doi: item.DOI ? sanitizeDoi(item.DOI) : null,
+                                    source: 'Crossref'
+                                };
+                                processedPaper.categories = categorizePaper(processedPaper);
+                                return processedPaper;
+                            }).filter(p => p.date);
+
+                            allPapers.push(...papers);
+                        }
+                        success = true;
+                        break; // Salir del bucle de reintentos si tiene éxito
+
+                    } catch (error) {
+                        console.warn(`Attempt ${attempt} for "${query}" failed:`, error.message);
+                        if (attempt < maxRetries) {
+                            await new Promise(resolve => setTimeout(resolve, retryDelay));
+                        } else {
+                            console.error(`All ${maxRetries} attempts failed for Crossref query: "${query}"`);
+                        }
+                    }
                 }
-                await new Promise(resolve => setTimeout(resolve, 1000)); // Be polite to the API
+                if (success) {
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Be polite to the API
+                }
             }
             
             console.log('Crossref search completed. Total unique papers from Crossref:', allPapers.length);
@@ -668,8 +678,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
         } catch (error) {
             console.error("Error fetching from Crossref:", error);
-            console.error("Error type:", error.name);
-            console.error("Error message:", error.message);
             return [];
         }
     }
@@ -761,8 +769,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function loadAllPapers() {
-        showLoadingState();
+    async function loadAllPapers(isBackgroundRefresh = false) {
+        if (!isBackgroundRefresh) {
+            showLoadingState();
+        }
         
         try {
             const [scholarPapers, arxivPapers, crossrefPapers] = await Promise.all([
@@ -817,9 +827,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             applyFilters(); // Usar filtros en lugar de displayPapers directo
 
+            // Guardar los resultados en el almacenamiento local después de una carga exitosa
+            saveToLocal();
+            if (isBackgroundRefresh) {
+                showSaveStatus(`Update complete. Total papers: ${allPapers.length}`, true);
+            }
+
         } catch (error) {
             console.error('Error loading papers:', error);
-            showErrorState('An unexpected error occurred while loading papers. Please try again.');
+            if (!isBackgroundRefresh) {
+                showErrorState('An unexpected error occurred while loading papers. Please try again.');
+            } else {
+                showSaveStatus('Failed to update papers in the background.', false);
+            }
         }
     }
 
@@ -1000,7 +1020,25 @@ document.addEventListener('DOMContentLoaded', () => {
     saveLocalBtn.addEventListener('click', saveToLocal);
     loadLocalBtn.addEventListener('click', loadFromLocal);
 
-    // Inicializar la carga de papers
-    loadAllPapers();
+    // Inicializar la aplicación
+    function initialize() {
+        const cachedData = loadFromLocal();
+
+        if (cachedData) {
+            // Si hay caché, comprobar si es antigua (más de 12 horas)
+            const cacheAge = new Date() - new Date(cachedData.timestamp);
+            const twelveHours = 12 * 60 * 60 * 1000;
+
+            if (cacheAge > twelveHours) {
+                showSaveStatus('Cache is old. Checking for updates in the background...', true);
+                loadAllPapers(true); // Actualizar en segundo plano
+            }
+        } else {
+            // Si no hay caché, hacer la carga inicial completa
+            loadAllPapers(false);
+        }
+    }
+
+    initialize();
 });
 

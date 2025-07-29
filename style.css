@@ -65,11 +65,26 @@ header h1 {
     z-index: 1;
 }
 
-header > p {
+header h2 {
     font-size: 1.3rem;
     font-weight: 300;
     margin: 0 0 2rem 0;
     opacity: 0.9;
+    position: relative;
+    z-index: 1;
+    color: var(--white); /* Asegurar texto blanco */
+}
+
+.loading-notice {
+    font-style: italic;
+    font-size: 0.9rem;
+    color: #333; /* Texto más oscuro para legibilidad sobre fondo claro */
+    background-color: #f0f0f0;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--accent-yellow);
+    margin: 1rem auto; /* Centrado y con margen */
+    max-width: 800px; /* Ancho máximo */
     position: relative;
     z-index: 1;
 }
