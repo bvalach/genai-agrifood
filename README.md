@@ -61,4 +61,5 @@ This project is designed for static hosting platforms and can be easily deployed
 This living review is made possible by the public APIs provided by:
 
 -   [Semantic Scholar](https://www.semanticscholar.org/product/api)
--   [arXiv](https://arxiv.org/help/api) 
+-   [arXiv](https://arxiv.org/help/api)
+-   [CrossRef](https://www.crossref.org/documentation/retrieve-metadata/rest-api/a-non-technical-introduction-to-our-api/)
