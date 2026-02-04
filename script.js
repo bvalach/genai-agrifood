@@ -651,43 +651,64 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDateRange();
     }
 
+    function showGridMessage(message) {
+        paperGrid.innerHTML = '';
+        const messageEl = document.createElement('p');
+        messageEl.className = 'grid-message';
+        messageEl.textContent = message;
+        paperGrid.appendChild(messageEl);
+    }
+
     // Mejorar el estado de carga
     function showLoadingState() {
-        paperGrid.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 4rem;">
-                <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #D6F06E; border-top: 4px solid #BCEB38; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem;"></div>
-                <p style="font-size: 1.2rem; color: #848484; margin: 0;">Loading latest research papers...</p>
-                <p style="font-size: 1rem; color: #848484; margin: 0.5rem 0 0 0; opacity: 0.8;">This may take a few moments</p>
-            </div>
-            <style>
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            </style>
-        `;
+        paperGrid.innerHTML = '';
+
+        const container = document.createElement('div');
+        container.className = 'grid-state';
+
+        const spinner = document.createElement('div');
+        spinner.className = 'grid-spinner';
+
+        const title = document.createElement('p');
+        title.className = 'grid-title';
+        title.textContent = 'Loading latest research papers...';
+
+        const subtitle = document.createElement('p');
+        subtitle.className = 'grid-subtitle';
+        subtitle.textContent = 'This may take a few moments';
+
+        container.appendChild(spinner);
+        container.appendChild(title);
+        container.appendChild(subtitle);
+        paperGrid.appendChild(container);
     }
 
     function showErrorState(message) {
-        paperGrid.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
-                <div style="font-size: 1rem; margin-bottom: 1rem;">⚠️</div>
-                <p style="font-size: 1.2rem; color: #848484; margin: 0;">${message}</p>
-                <button onclick="location.reload()" style="
-                    background: #D6F06E;
-                    color: #2c2c2c;
-                    border: none;
-                    padding: 1rem 2rem;
-                    border-radius: 50px;
-                    font-weight: 500;
-                    margin-top: 1.5rem;
-                    cursor: pointer;
-                    transition: transform 0.3s ease;
-                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                    Try Again
-                </button>
-            </div>
-        `;
+        paperGrid.innerHTML = '';
+
+        const container = document.createElement('div');
+        container.className = 'grid-state';
+
+        const icon = document.createElement('div');
+        icon.className = 'grid-icon';
+        icon.textContent = '⚠️';
+
+        const msg = document.createElement('p');
+        msg.className = 'grid-title';
+        msg.textContent = message;
+
+        const button = document.createElement('button');
+        button.className = 'grid-retry';
+        button.type = 'button';
+        button.textContent = 'Try Again';
+        button.addEventListener('click', () => {
+            window.location.reload();
+        });
+
+        container.appendChild(icon);
+        container.appendChild(msg);
+        container.appendChild(button);
+        paperGrid.appendChild(container);
     }
 
     async function searchSemanticScholar() {
@@ -1017,7 +1038,7 @@ document.addEventListener('DOMContentLoaded', () => {
             initializeCategoryFilters(); // Inicializar filtros de categorías
 
             if (allPapers.length === 0) {
-                paperGrid.innerHTML = '<p>No papers found matching the criteria (published after January 2023).</p>';
+                showGridMessage('No papers found matching the criteria (published after January 2023).');
                 return;
             }
             applyFilters(); // Usar filtros en lugar de displayPapers directo
@@ -1041,7 +1062,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayPapers(papers) {
         paperGrid.innerHTML = '';
         if (papers.length === 0) {
-            paperGrid.innerHTML = '<p>No papers found matching the selected criteria.</p>';
+            showGridMessage('No papers found matching the selected criteria.');
             return;
         }
         papers.forEach(createPaperCard);

@@ -835,16 +835,77 @@ footer a:hover {
     color: var(--dark-gray);
 }
 
-#paper-grid > p {
+#paper-grid > p,
+.grid-message {
     grid-column: 1 / -1;
     text-align: center;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: var(--text-gray);
     padding: 3rem;
     background: var(--white);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-light);
     border: var(--border);
+}
+
+.grid-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    background: var(--white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-light);
+    border: var(--border);
+}
+
+.grid-spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--primary-green);
+    border-top: 4px solid var(--accent-green);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+.grid-icon {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.grid-title {
+    font-size: 1.1rem;
+    color: #848484;
+    margin: 0;
+}
+
+.grid-subtitle {
+    font-size: 0.95rem;
+    color: #848484;
+    margin: 0.5rem 0 0 0;
+    opacity: 0.8;
+}
+
+.grid-retry {
+    background: var(--primary-green);
+    color: #2c2c2c;
+    border: none;
+    padding: 0.9rem 1.6rem;
+    border-radius: 50px;
+    font-weight: 500;
+    margin-top: 1.2rem;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.grid-retry:hover {
+    transform: translateY(-2px);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .paper-card:focus,
