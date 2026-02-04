@@ -1,5 +1,5 @@
 /* Importar fuentes modernas */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 /* Variables CSS para consistencia */
 :root {
@@ -14,6 +14,8 @@
     --shadow-medium: 0 2px 10px rgba(0,0,0,0.08);
     --border-radius: 10px;
     --transition: all 0.2s ease;
+    --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 * {
@@ -21,19 +23,21 @@
 }
 
 body {
-    font-family: 'Raleway', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-sans);
     margin: 0;
     padding: 0;
     background: var(--light-gray);
     color: var(--dark-gray);
-    line-height: 1.6;
+    line-height: 1.45;
+    font-size: 15.5px;
+    letter-spacing: 0.1px;
     min-height: 100vh;
 }
 
 header {
     background: var(--dark-gray);
     color: var(--white);
-    padding: 2.5rem 1rem;
+    padding: 2rem 1rem;
     text-align: center;
     box-shadow: var(--shadow-medium);
     position: relative;
@@ -45,19 +49,20 @@ header::before {
 }
 
 header h1 {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 3.5rem;
+    font-family: var(--font-display);
+    font-size: 3.1rem;
     font-weight: 700;
     margin: 0 0 0.5rem 0;
     color: var(--white);
     position: relative;
     z-index: 1;
+    letter-spacing: -0.02em;
 }
 
 header h2 {
-    font-size: 1.3rem;
-    font-weight: 300;
-    margin: 0 0 2rem 0;
+    font-size: 1.05rem;
+    font-weight: 400;
+    margin: 0 0 1.5rem 0;
     opacity: 0.9;
     position: relative;
     z-index: 1;
@@ -66,10 +71,10 @@ header h2 {
 
 .loading-notice {
     font-style: italic;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #333; /* Texto más oscuro para legibilidad sobre fondo claro */
     background-color: #f0f0f0;
-    padding: 0.75rem 1.25rem;
+    padding: 0.6rem 1rem;
     border-radius: 8px;
     border-left: 4px solid var(--primary-green);
     margin: 1rem auto; /* Centrado y con margen */
@@ -101,7 +106,7 @@ header h2 {
 }
 
 header nav {
-    margin-top: 2rem;
+    margin-top: 1.5rem;
     position: relative;
     z-index: 1;
 }
@@ -110,12 +115,12 @@ header nav a.nav-link {
     display: inline-block;
     color: var(--white);
     text-decoration: none;
-    padding: 1rem 2rem;
+    padding: 0.85rem 1.7rem;
     background: transparent;
     border: 2px solid var(--primary-green);
     border-radius: 50px;
     font-weight: 500;
-    font-size: 1.1rem;
+    font-size: 1rem;
     transition: var(--transition);
     position: relative;
     overflow: hidden;
@@ -137,7 +142,7 @@ header nav a.nav-link:hover {
 }
 
 main {
-    padding: 3rem 1rem;
+    padding: 2.5rem 1rem;
     max-width: 1400px;
     margin: 0 auto;
 }
@@ -146,7 +151,7 @@ main {
 .timeline-container {
     background: var(--white);
     margin: 2rem auto;
-    padding: 2rem;
+    padding: 1.5rem;
     max-width: 1400px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-light);
@@ -154,8 +159,8 @@ main {
 }
 
 .timeline-container h3 {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 1.2rem;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
     font-weight: 600;
     margin: 0 0 1.5rem 0;
     color: var(--dark-gray);
@@ -263,25 +268,26 @@ main {
 }
 
 h2 {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 2.5rem;
+    font-family: var(--font-display);
+    font-size: 2.1rem;
     font-weight: 600;
     text-align: center;
     margin: 0 0 1rem 0;
     color: var(--dark-gray);
+    letter-spacing: -0.01em;
 }
 
 main > p {
     text-align: center;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: var(--text-gray);
-    margin-bottom: 3rem;
+    margin-bottom: 2.2rem;
 }
 
 #paper-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Aún más pequeñas */
-    gap: 0.8rem; /* Menos espacio entre fichas */
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.7rem;
     padding: 0;
 }
 
@@ -289,7 +295,7 @@ main > p {
     background: var(--white);
     border: var(--border);
     border-radius: var(--border-radius);
-    padding: 0.8rem; /* Padding muy reducido */
+    padding: 0.85rem;
     cursor: pointer;
     transition: var(--transition);
     box-shadow: var(--shadow-light);
@@ -319,28 +325,36 @@ main > p {
 }
 
 .paper-card h3 {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 1.1rem; /* TÍTULO MÁS GRANDE */
+    font-family: var(--font-display);
+    font-size: 1rem;
     font-weight: 700;
-    margin: 0 0 0.6rem 0;
+    margin: 0 0 0.5rem 0;
     color: var(--dark-gray);
-    line-height: 1.2;
+    line-height: 1.18;
+    letter-spacing: -0.01em;
 }
 
 .paper-card p {
-    margin: 0.05rem 0;
+    margin: 0.1rem 0;
     color: #666;
-    font-size: 0.55rem; /* AÚN MÁS PEQUEÑO */
-    line-height: 1.3;
+    font-size: 0.7rem;
+    line-height: 1.2;
+}
+
+.paper-card .paper-authors,
+.paper-card .paper-date {
+    font-size: 0.65rem;
+    line-height: 1.2;
+    letter-spacing: 0.1px;
 }
 
 .paper-doi {
-    font-size: 0.55rem; /* AÚN MÁS PEQUEÑO */
+    font-size: 0.6rem;
     color: #666;
     word-break: break-all;
     background: none;
     padding: 0;
-    margin-top: 0.3rem;
+    margin-top: 0.25rem;
     font-family: 'Courier New', monospace;
     text-align: left;
 }
@@ -367,7 +381,7 @@ main > p {
 .modal-content {
     background: var(--white);
     margin: 10% auto;
-    padding: 3rem;
+    padding: 2.5rem;
     border: var(--border);
     width: 90%;
     max-width: 800px;
@@ -399,14 +413,14 @@ main > p {
 }
 
 .modal-content h2 {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 2rem;
+    font-family: var(--font-display);
+    font-size: 1.75rem;
     margin: 0 0 1rem 0;
 }
 
 .modal-content p {
     margin: 1rem 0;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: var(--text-gray);
 }
 
@@ -485,7 +499,7 @@ footer a:hover {
 .source-filters-container {
     background: var(--white);
     margin: 2rem auto;
-    padding: 2rem;
+    padding: 1.5rem;
     max-width: 1400px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-light);
@@ -493,8 +507,8 @@ footer a:hover {
 }
 
 .source-filters-container h3 {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 1.2rem;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
     font-weight: 600;
     margin: 0 0 1.5rem 0;
     color: var(--dark-gray);
@@ -513,9 +527,9 @@ footer a:hover {
     background: var(--light-gray);
     color: var(--text-gray);
     border: 2px solid transparent;
-    padding: 0.6rem 1.2rem;
+    padding: 0.5rem 1rem;
     border-radius: 25px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
     transition: var(--transition);
@@ -538,7 +552,7 @@ footer a:hover {
 .category-filters-container {
     background: var(--white);
     margin: 2rem auto;
-    padding: 2rem;
+    padding: 1.5rem;
     max-width: 1400px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-light);
@@ -546,8 +560,8 @@ footer a:hover {
 }
 
 .category-filters-container h3 {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 1.2rem;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
     font-weight: 600;
     margin: 0 0 1.5rem 0;
     color: var(--dark-gray);
@@ -566,9 +580,9 @@ footer a:hover {
     background: var(--light-gray);
     color: var(--text-gray);
     border: 2px solid transparent;
-    padding: 0.6rem 1.2rem;
+    padding: 0.5rem 1rem;
     border-radius: 25px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
     transition: var(--transition);
@@ -602,7 +616,7 @@ footer a:hover {
     border: 1px solid var(--text-gray);
     padding: 0.5rem 1rem;
     border-radius: 20px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
     transition: var(--transition);
@@ -618,7 +632,7 @@ footer a:hover {
 .data-persistence-container {
     background: var(--white);
     margin: 2rem auto;
-    padding: 2rem;
+    padding: 1.5rem;
     max-width: 1400px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-light);
@@ -626,8 +640,8 @@ footer a:hover {
 }
 
 .data-persistence-container h3 {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 1.2rem;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
     font-weight: 600;
     margin: 0 0 1.5rem 0;
     color: var(--dark-gray);
@@ -646,9 +660,9 @@ footer a:hover {
     background: var(--primary-green);
     color: var(--dark-gray);
     border: none;
-    padding: 0.8rem 1.5rem;
+    padding: 0.7rem 1.3rem;
     border-radius: 25px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
@@ -670,7 +684,7 @@ footer a:hover {
 
 .save-status {
     color: var(--text-gray);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-style: italic;
     padding: 0.5rem;
     border-radius: 15px;
@@ -692,10 +706,10 @@ footer a:hover {
 /* Responsive Design */
 @media (max-width: 768px) {
     header h1 {
-        font-size: 2.5rem;
+        font-size: 2.4rem;
     }
     header > p {
-        font-size: 1.1rem;
+        font-size: 1rem;
     }
     .acknowledgement {
         padding: 1rem;
@@ -703,17 +717,17 @@ footer a:hover {
     }
     #paper-grid {
         grid-template-columns: 1fr;
-        gap: 1.5rem;
+        gap: 1rem;
     }
     .paper-card {
-        padding: 1.5rem;
+        padding: 1.2rem;
     }
     .modal-content {
-        padding: 2rem;
+        padding: 1.8rem;
         width: 95%;
     }
     h2 {
-        font-size: 2rem;
+        font-size: 1.8rem;
     }
 }
 
@@ -821,7 +835,7 @@ footer a:hover {
     color: var(--dark-gray);
 }
 
-#paper-grid p {
+#paper-grid > p {
     grid-column: 1 / -1;
     text-align: center;
     font-size: 1.2rem;

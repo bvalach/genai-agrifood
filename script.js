@@ -47,6 +47,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     }
 
+    async function fetchWithCorsFallback(url, options = {}) {
+        try {
+            return await fetch(url, options);
+        } catch (error) {
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+            return await fetch(proxyUrl, options);
+        }
+    }
+
     // Timeline elements
     const dateSliderMin = document.getElementById('date-slider-min');
     const dateSliderMax = document.getElementById('date-slider-max');
@@ -655,7 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-                const response = await fetch(url, {
+                const response = await fetchWithCorsFallback(url, {
                     method: 'GET',
                     headers: { 'Accept': 'application/json' },
                     signal: controller.signal
@@ -817,7 +826,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-            const response = await fetch(url, {
+            const response = await fetchWithCorsFallback(url, {
                 method: 'GET',
                 signal: controller.signal
             });
@@ -993,9 +1002,11 @@ document.addEventListener('DOMContentLoaded', () => {
         titleElement.textContent = paper.title || 'Untitled';
 
         const authorsElement = document.createElement('p');
+        authorsElement.className = 'paper-authors';
         authorsElement.textContent = Array.isArray(paper.authors) ? paper.authors.join(', ') : 'N/A';
 
         const dateElement = document.createElement('p');
+        dateElement.className = 'paper-date';
         dateElement.textContent = safeDate;
 
         // Añadir etiquetas de fuente y categoría
