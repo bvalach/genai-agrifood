@@ -55,6 +55,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const minDateLabel = document.getElementById('min-date');
     const maxDateLabel = document.getElementById('max-date');
 
+    // Source filter elements
+    const sourceFiltersContainer = document.getElementById('source-filters');
+    const selectAllSourcesBtn = document.getElementById('select-all-sources');
+    const clearAllSourcesBtn = document.getElementById('clear-all-sources');
+
     // Category filter elements
     const categoryFiltersContainer = document.getElementById('category-filters');
     const selectAllBtn = document.getElementById('select-all-categories');
@@ -74,6 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let dateRange = { min: 0, max: 48 }; // Índices de meses
     let actualDateRange = { minDate: null, maxDate: null }; // Fechas reales
     let availableCategories = new Set(); // Categorías disponibles
+    let availableSources = new Set(); // Fuentes disponibles
+    let selectedSources = new Set(); // Fuentes seleccionadas
 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -92,6 +99,52 @@ document.addEventListener('DOMContentLoaded', () => {
         'Plant Breeding': ['plant breeding', 'crop genetics', 'genetic algorithm', 'sequence generation', 'genetic engineering']
     };
 
+    const coreGenAiTerms = [
+        'generative ai',
+        'foundation model',
+        'large language model',
+        'small language model',
+        'llm',
+        'diffusion model',
+        'generative adversarial',
+        'gan',
+        'text-to-image',
+        'text to image',
+        'multimodal',
+        'vision-language',
+        'synthetic data',
+        'prompt'
+    ];
+
+    const agriFoodTerms = [
+        'agriculture',
+        'agricultural',
+        'agrifood',
+        'agri-food',
+        'farming',
+        'farm',
+        'crop',
+        'soil',
+        'plant',
+        'horticulture',
+        'livestock',
+        'dairy',
+        'aquaculture',
+        'food industry',
+        'food processing',
+        'food safety',
+        'food quality',
+        'supply chain',
+        'agro'
+    ];
+
+    function isRelevantPaper(paper) {
+        const text = `${paper.title || ''} ${paper.abstract || ''}`.toLowerCase();
+        const hasGenAi = coreGenAiTerms.some(term => text.includes(term));
+        const hasAgriFood = agriFoodTerms.some(term => text.includes(term));
+        return hasGenAi && hasAgriFood;
+    }
+
     // Función para auto-etiquetar papers
     function categorizePaper(paper) {
         const text = `${paper.title} ${paper.abstract}`.toLowerCase();
@@ -106,6 +159,70 @@ document.addEventListener('DOMContentLoaded', () => {
         return categories.length > 0 ? categories : ['Other'];
     }
 
+    // Funciones de filtrado por fuente
+    function initializeSourceFilters() {
+        availableSources.clear();
+        allPapers.forEach(paper => {
+            if (paper.source) {
+                availableSources.add(paper.source);
+            }
+        });
+
+        sourceFiltersContainer.innerHTML = '';
+        const hasSavedSelection = selectedSources.size > 0;
+
+        availableSources.forEach(source => {
+            const button = document.createElement('button');
+            button.className = 'source-filter-btn';
+            button.textContent = source;
+            button.dataset.source = source;
+
+            button.addEventListener('click', () => toggleSource(source));
+            sourceFiltersContainer.appendChild(button);
+
+            if (!hasSavedSelection) {
+                selectedSources.add(source); // Inicialmente todas seleccionadas
+            }
+        });
+
+        updateSourceButtons();
+    }
+
+    function toggleSource(source) {
+        if (selectedSources.has(source)) {
+            selectedSources.delete(source);
+        } else {
+            selectedSources.add(source);
+        }
+
+        updateSourceButtons();
+        applyFilters();
+    }
+
+    function updateSourceButtons() {
+        const buttons = sourceFiltersContainer.querySelectorAll('.source-filter-btn');
+        buttons.forEach(button => {
+            const source = button.dataset.source;
+            if (selectedSources.has(source)) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        });
+    }
+
+    function selectAllSources() {
+        availableSources.forEach(src => selectedSources.add(src));
+        updateSourceButtons();
+        applyFilters();
+    }
+
+    function clearAllSources() {
+        selectedSources.clear();
+        updateSourceButtons();
+        applyFilters();
+    }
+
     // Funciones de filtrado por categorías
     function initializeCategoryFilters() {
         // Recopilar todas las categorías disponibles
@@ -118,17 +235,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Crear botones de filtro
         categoryFiltersContainer.innerHTML = '';
+        const hasSavedSelection = selectedCategories.size > 0;
         availableCategories.forEach(category => {
             const button = document.createElement('button');
-            button.className = 'category-filter-btn active';
+            button.className = 'category-filter-btn';
             button.textContent = category;
             button.dataset.category = category;
             
             button.addEventListener('click', () => toggleCategory(category));
             categoryFiltersContainer.appendChild(button);
             
-            selectedCategories.add(category); // Inicialmente todas seleccionadas
+            if (!hasSavedSelection) {
+                selectedCategories.add(category); // Inicialmente todas seleccionadas
+            }
         });
+
+        updateCategoryButtons();
     }
 
     function toggleCategory(category) {
@@ -167,8 +289,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function applyFilters() {
+        // Filtrar por fuentes
+        const sourceFiltered = allPapers.filter(paper => {
+            if (selectedSources.size === 0) return false;
+            return paper.source && selectedSources.has(paper.source);
+        });
+
         // Filtrar por categorías
-        const categoryFiltered = allPapers.filter(paper => {
+        const categoryFiltered = sourceFiltered.filter(paper => {
             if (selectedCategories.size === 0) return false;
             return paper.categories && paper.categories.some(cat => selectedCategories.has(cat));
         });
@@ -319,7 +447,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 papers: allPapers,
                 categories: Array.from(availableCategories),
                 dateRange: actualDateRange,
-                selectedCategories: Array.from(selectedCategories)
+                selectedCategories: Array.from(selectedCategories),
+                sources: Array.from(availableSources),
+                selectedSources: Array.from(selectedSources)
             };
 
             localStorage.setItem('foodAI-living-review', JSON.stringify(saveData));
@@ -342,8 +472,11 @@ document.addEventListener('DOMContentLoaded', () => {
             availableCategories = new Set(data.categories || []);
             actualDateRange = data.dateRange || { minDate: null, maxDate: null };
             selectedCategories = new Set(data.selectedCategories || []);
+            availableSources = new Set(data.sources || []);
+            selectedSources = new Set(data.selectedSources || []);
 
             initializeTimeline(allPapers);
+            initializeSourceFilters();
             initializeCategoryFilters();
             applyFilters();
 
@@ -453,7 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showLoadingState() {
         paperGrid.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 4rem;">
-                <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #ECF6CE; border-top: 4px solid #F4FA58; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem;"></div>
+                <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #D6F06E; border-top: 4px solid #BCEB38; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem;"></div>
                 <p style="font-size: 1.2rem; color: #848484; margin: 0;">Loading latest research papers...</p>
                 <p style="font-size: 1rem; color: #848484; margin: 0.5rem 0 0 0; opacity: 0.8;">This may take a few moments</p>
             </div>
@@ -472,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="font-size: 1rem; margin-bottom: 1rem;">⚠️</div>
                 <p style="font-size: 1.2rem; color: #848484; margin: 0;">${message}</p>
                 <button onclick="location.reload()" style="
-                    background: linear-gradient(135deg, #ECF6CE, #F4FA58);
+                    background: #D6F06E;
                     color: #2c2c2c;
                     border: none;
                     padding: 1rem 2rem;
@@ -491,35 +624,20 @@ document.addEventListener('DOMContentLoaded', () => {
     async function searchSemanticScholar() {
         const queries = [
             'generative AI agriculture',
-            'generative AI food industry',
-            'generative AI food manufacturing',
-            'large language model agriculture',
-            'small language model agriculture',
-            'large language model food industry',
-            'large language model food manufacturing',
-            'large language model agrifood',
-            'small language model food industry',
-            'small language model food manufacturing',
-            'small language model agrifood',
-            'plant disease synthetic images',
-            'precision agriculture synthetic',
-            'agricultural robot generative',
-            'food safety generative AI',
-            'generative AI food quality',
-            'livestock monitoring AI',
-            'vertical farming generative AI',
-            'plant breeding generative AI',
-            'generative adversarial network agriculture',
-            'generative adversarial network food industry',
-            'generative adversarial network food manufacturing',
-            'diffusion model agriculture',
-            'diffusion model food manufacturing',
-            'farm management language model',
-            'agricultural advisory AI',
             'generative AI agrifood',
-            'synthetic data generation farming',
-            'AI agriculture generative model',
+            'foundation model agriculture',
+            'large language model agriculture',
+            'large language model agrifood',
+            'diffusion model agriculture',
+            'generative adversarial network agriculture',
             'synthetic data agriculture',
+            'synthetic data crop',
+            'vision-language model agriculture',
+            'multimodal model agriculture',
+            'food industry generative AI',
+            'food processing generative AI',
+            'food safety generative AI',
+            'precision agriculture generative model',
         ];
         
         const allPapers = [];
@@ -565,7 +683,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         };
                         processedPaper.categories = categorizePaper(processedPaper);
                         return processedPaper;
-                    });
+                    }).filter(isRelevantPaper);
                     allPapers.push(...papers);
                 }
 
@@ -586,14 +704,15 @@ document.addEventListener('DOMContentLoaded', () => {
     async function searchCrossref() {
         const queries = [
             'generative AI agriculture',
-            'generative AI food industry',
-            'language model agriculture',
-            'synthetic data agriculture',
             'generative AI agrifood',
-            // Añade más consultas, quizás más amplias o sin "AI" si quieres probar la amplitud
-            'agrifood deep learning', 
-            'agriculture AI',
-            'food processing automation' 
+            'foundation model agriculture',
+            'large language model agriculture',
+            'diffusion model agriculture',
+            'generative adversarial network agriculture',
+            'synthetic data agriculture',
+            'food industry generative AI',
+            'food processing generative AI',
+            'food safety generative AI'
         ];
         
         const allPapers = [];
@@ -652,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 };
                                 processedPaper.categories = categorizePaper(processedPaper);
                                 return processedPaper;
-                            }).filter(p => p.date);
+                            }).filter(p => p.date).filter(isRelevantPaper);
 
                             allPapers.push(...papers);
                         }
@@ -683,7 +802,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function searchArxiv() {
-        const query = `(all:agriculture AND all:"generative AI") OR (all:"food industry" AND all:"generative AI") OR (all:"food manufacturing" AND all:"generative AI") OR (all:agriculture AND all:"synthetic data") OR (all:agriculture AND all:"language model") OR (all:farming AND all:"generative ai") OR (all:agri* AND all:GAN) OR (all:"food safety" AND all:"generative AI") OR (all:"food quality" AND all:"generative AI")`;
+        const query = `(
+            all:("generative ai" OR "foundation model" OR "large language model" OR "diffusion model" OR "generative adversarial" OR GAN)
+            AND
+            all:(agriculture OR agrifood OR farming OR crop OR "food industry" OR "food processing" OR "food safety")
+        )`;
         const encodedQuery = encodeURIComponent(query);
         const url = `https://export.arxiv.org/api/query?search_query=${encodedQuery}&sortBy=submittedDate&sortOrder=descending&max_results=100`;
         
@@ -752,7 +875,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     // Añadir categorías automáticamente
                     processedPaper.categories = categorizePaper(processedPaper);
-                    papers.push(processedPaper);
+                    if (isRelevantPaper(processedPaper)) {
+                        papers.push(processedPaper);
+                    }
                 } catch (e) {
                     console.warn('Error processing arXiv entry:', e);
                     continue;
@@ -819,6 +944,7 @@ document.addEventListener('DOMContentLoaded', () => {
             allPapers = filteredPapers;
             
             initializeTimeline(allPapers);
+            initializeSourceFilters();
             initializeCategoryFilters(); // Inicializar filtros de categorías
 
             if (allPapers.length === 0) {
@@ -910,7 +1036,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 categoryTag.className = 'category-tag';
                 categoryTag.textContent = category;
                 categoryTag.style.cssText = `
-                    background: linear-gradient(135deg, #ECF6CE, #F4FA58);
+                    background: var(--primary-green);
                     color: #2c2c2c;
                     padding: 0.2rem 0.5rem;
                     border-radius: 12px;
@@ -1013,6 +1139,10 @@ document.addEventListener('DOMContentLoaded', () => {
     selectAllBtn.addEventListener('click', selectAllCategories);
     clearAllBtn.addEventListener('click', clearAllCategories);
 
+    // Event listeners for source filters
+    selectAllSourcesBtn.addEventListener('click', selectAllSources);
+    clearAllSourcesBtn.addEventListener('click', clearAllSources);
+
     // Event listeners for data persistence
     exportJsonBtn.addEventListener('click', exportToJson);
     exportCsvBtn.addEventListener('click', exportToCsv);
@@ -1041,4 +1171,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initialize();
 });
-

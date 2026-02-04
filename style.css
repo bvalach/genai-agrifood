@@ -3,17 +3,17 @@
 
 /* Variables CSS para consistencia */
 :root {
-    --primary-green: #ECF6CE;
-    --accent-yellow: #F4FA58;
-    --text-gray: #848484;
-    --dark-gray: #2c2c2c;
-    --light-gray: #f8f9fa;
+    --primary-green: #D6F06E;
+    --accent-green: #BCEB38;
+    --text-gray: #6f6f6f;
+    --dark-gray: #2b2b2b;
+    --light-gray: #f2f3f5;
     --white: #ffffff;
-    --shadow-light: 0 2px 10px rgba(0,0,0,0.08);
-    --shadow-medium: 0 4px 20px rgba(0,0,0,0.12);
-    --shadow-heavy: 0 8px 30px rgba(0,0,0,0.15);
-    --border-radius: 12px;
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --border: 1px solid #e3e3e3;
+    --shadow-light: 0 1px 4px rgba(0,0,0,0.06);
+    --shadow-medium: 0 2px 10px rgba(0,0,0,0.08);
+    --border-radius: 10px;
+    --transition: all 0.2s ease;
 }
 
 * {
@@ -24,31 +24,24 @@ body {
     font-family: 'Raleway', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     margin: 0;
     padding: 0;
-    background: linear-gradient(135deg, var(--light-gray) 0%, var(--primary-green) 100%);
+    background: var(--light-gray);
     color: var(--dark-gray);
     line-height: 1.6;
     min-height: 100vh;
 }
 
 header {
-    background: linear-gradient(135deg, var(--dark-gray) 0%, #1a1a1a 100%);
+    background: var(--dark-gray);
     color: var(--white);
     padding: 2.5rem 1rem;
     text-align: center;
-    box-shadow: var(--shadow-heavy);
+    box-shadow: var(--shadow-medium);
     position: relative;
     overflow: hidden;
 }
 
 header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(236, 246, 206, 0.1) 50%, transparent 70%);
-    pointer-events: none;
+    content: none;
 }
 
 header h1 {
@@ -56,11 +49,7 @@ header h1 {
     font-size: 3.5rem;
     font-weight: 700;
     margin: 0 0 0.5rem 0;
-    background: linear-gradient(135deg, var(--white) 0%, var(--accent-yellow) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    color: var(--white);
     position: relative;
     z-index: 1;
 }
@@ -82,7 +71,7 @@ header h2 {
     background-color: #f0f0f0;
     padding: 0.75rem 1.25rem;
     border-radius: 8px;
-    border-left: 4px solid var(--accent-yellow);
+    border-left: 4px solid var(--primary-green);
     margin: 1rem auto; /* Centrado y con margen */
     max-width: 800px; /* Ancho máximo */
     position: relative;
@@ -90,9 +79,8 @@ header h2 {
 }
 
 .acknowledgement {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: #3a3a3a;
+    border: 1px solid #4a4a4a;
     border-radius: var(--border-radius);
     padding: 1.5rem;
     margin: 2rem auto;
@@ -108,7 +96,7 @@ header h2 {
 }
 
 .acknowledgement strong {
-    color: var(--accent-yellow);
+    color: var(--primary-green);
     font-weight: 600;
 }
 
@@ -123,8 +111,8 @@ header nav a.nav-link {
     color: var(--white);
     text-decoration: none;
     padding: 1rem 2rem;
-    background: linear-gradient(135deg, transparent 0%, rgba(236, 246, 206, 0.2) 100%);
-    border: 2px solid var(--accent-yellow);
+    background: transparent;
+    border: 2px solid var(--primary-green);
     border-radius: 50px;
     font-weight: 500;
     font-size: 1.1rem;
@@ -134,14 +122,7 @@ header nav a.nav-link {
 }
 
 header nav a.nav-link::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(244, 250, 88, 0.4), transparent);
-    transition: left 0.5s;
+    content: none;
 }
 
 header nav a.nav-link:hover::before {
@@ -149,10 +130,10 @@ header nav a.nav-link:hover::before {
 }
 
 header nav a.nav-link:hover {
-    background: var(--accent-yellow);
-    color: #0D47A1; /* Azul oscuro para mejor contraste */
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(244, 250, 88, 0.4);
+    background: var(--primary-green);
+    color: var(--dark-gray);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-light);
 }
 
 main {
@@ -168,7 +149,8 @@ main {
     padding: 2rem;
     max-width: 1400px;
     border-radius: var(--border-radius);
-    box-shadow: var(--shadow-medium);
+    box-shadow: var(--shadow-light);
+    border: var(--border);
 }
 
 .timeline-container h3 {
@@ -221,7 +203,7 @@ main {
     height: 20px;
     width: 20px;
     border-radius: 50%;
-    background: var(--accent-yellow);
+    background: var(--primary-green);
     border: 2px solid var(--dark-gray);
     cursor: pointer;
     pointer-events: all;
@@ -239,7 +221,7 @@ main {
     height: 20px;
     width: 20px;
     border-radius: 50%;
-    background: var(--accent-yellow);
+    background: var(--primary-green);
     border: 2px solid var(--dark-gray);
     cursor: pointer;
     pointer-events: all;
@@ -257,17 +239,17 @@ main {
 
 #selected-range {
     font-weight: 600;
-    color: var(--accent-yellow);
-    background: var(--dark-gray);
+    color: var(--dark-gray);
+    background: var(--primary-green);
     padding: 0.3rem 0.8rem;
     border-radius: 20px;
     font-size: 0.85rem;
 }
 
 #reset-timeline {
-    background: var(--primary-green);
+    background: #f1f1f1;
     color: var(--dark-gray);
-    border: none;
+    border: var(--border);
     padding: 0.5rem 1rem;
     border-radius: 20px;
     font-size: 0.85rem;
@@ -277,8 +259,7 @@ main {
 }
 
 #reset-timeline:hover {
-    background: var(--accent-yellow);
-    transform: translateY(-1px);
+    background: var(--primary-green);
 }
 
 h2 {
@@ -306,7 +287,7 @@ main > p {
 
 .paper-card {
     background: var(--white);
-    border: none;
+    border: var(--border);
     border-radius: var(--border-radius);
     padding: 0.8rem; /* Padding muy reducido */
     cursor: pointer;
@@ -323,7 +304,7 @@ main > p {
     left: 0;
     width: 100%;
     height: 4px;
-    background: linear-gradient(90deg, var(--primary-green), var(--accent-yellow));
+    background: var(--primary-green);
     transform: scaleX(0);
     transition: transform 0.3s ease;
 }
@@ -333,8 +314,8 @@ main > p {
 }
 
 .paper-card:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-heavy);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-medium);
 }
 
 .paper-card h3 {
@@ -387,12 +368,12 @@ main > p {
     background: var(--white);
     margin: 10% auto;
     padding: 3rem;
-    border: none;
+    border: var(--border);
     width: 90%;
     max-width: 800px;
     border-radius: var(--border-radius);
     position: relative;
-    box-shadow: var(--shadow-heavy);
+    box-shadow: var(--shadow-medium);
     animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -430,7 +411,7 @@ main > p {
 }
 
 #modal-doi {
-    background: var(--dark-gray); /* Fondo antracita */
+    background: #f3f3f3;
     padding: 1rem;
     border-radius: 8px;
     margin-top: 1rem;
@@ -438,7 +419,7 @@ main > p {
 }
 
 #modal-doi a {
-    color: var(--primary-green); /* Color claro para contraste */
+    color: var(--dark-gray);
     font-weight: 500;
     text-decoration: none;
     font-size: 1.1rem;
@@ -470,7 +451,7 @@ iframe {
 }
 
 footer {
-    background: linear-gradient(135deg, var(--dark-gray) 0%, #1a1a1a 100%);
+    background: var(--dark-gray);
     color: var(--white);
     text-align: center;
     padding: 3rem 1rem;
@@ -480,13 +461,7 @@ footer {
 }
 
 footer::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: linear-gradient(90deg, var(--primary-green), var(--accent-yellow));
+    content: none;
 }
 
 footer p {
@@ -495,7 +470,7 @@ footer p {
 }
 
 footer a {
-    color: var(--accent-yellow);
+    color: var(--primary-green);
     text-decoration: none;
     font-weight: 500;
     border-bottom: 2px solid transparent;
@@ -503,17 +478,71 @@ footer a {
 }
 
 footer a:hover {
-    border-bottom-color: var(--accent-yellow);
+    border-bottom-color: var(--primary-green);
 }
 
 /* Category Filters Styles */
+.source-filters-container {
+    background: var(--white);
+    margin: 2rem auto;
+    padding: 2rem;
+    max-width: 1400px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-light);
+    border: var(--border);
+}
+
+.source-filters-container h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem 0;
+    color: var(--dark-gray);
+    text-align: center;
+}
+
+.source-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.source-filter-btn {
+    background: var(--light-gray);
+    color: var(--text-gray);
+    border: 2px solid transparent;
+    padding: 0.6rem 1.2rem;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: inherit;
+}
+
+.source-filter-btn:hover {
+    background: var(--primary-green);
+    color: var(--dark-gray);
+    transform: translateY(-1px);
+}
+
+.source-filter-btn.active {
+    background: var(--primary-green);
+    color: var(--dark-gray);
+    border-color: var(--primary-green);
+    font-weight: 600;
+}
+
 .category-filters-container {
     background: var(--white);
     margin: 2rem auto;
     padding: 2rem;
     max-width: 1400px;
     border-radius: var(--border-radius);
-    box-shadow: var(--shadow-medium);
+    box-shadow: var(--shadow-light);
+    border: var(--border);
 }
 
 .category-filters-container h3 {
@@ -549,16 +578,16 @@ footer a:hover {
 .category-filter-btn:hover {
     background: var(--primary-green);
     color: var(--dark-gray);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-light);
+    transform: translateY(-1px);
+    box-shadow: none;
 }
 
 .category-filter-btn.active {
-    background: linear-gradient(135deg, var(--primary-green), var(--accent-yellow));
+    background: var(--primary-green);
     color: var(--dark-gray);
-    border-color: var(--accent-yellow);
+    border-color: var(--primary-green);
     font-weight: 600;
-    box-shadow: var(--shadow-medium);
+    box-shadow: none;
 }
 
 .filter-actions {
@@ -592,7 +621,8 @@ footer a:hover {
     padding: 2rem;
     max-width: 1400px;
     border-radius: var(--border-radius);
-    box-shadow: var(--shadow-medium);
+    box-shadow: var(--shadow-light);
+    border: var(--border);
 }
 
 .data-persistence-container h3 {
@@ -613,7 +643,7 @@ footer a:hover {
 }
 
 .export-btn {
-    background: linear-gradient(135deg, var(--primary-green), var(--accent-yellow));
+    background: var(--primary-green);
     color: var(--dark-gray);
     border: none;
     padding: 0.8rem 1.5rem;
@@ -629,9 +659,9 @@ footer a:hover {
 }
 
 .export-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-medium);
-    background: linear-gradient(135deg, var(--accent-yellow), var(--primary-green));
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-light);
+    background: var(--accent-green);
 }
 
 .export-btn:active {
@@ -733,7 +763,8 @@ footer a:hover {
 /* Media queries para nuevos elementos */
 @media (max-width: 768px) {
     .category-filters-container,
-    .data-persistence-container {
+    .data-persistence-container,
+    .source-filters-container {
         margin: 1rem;
         padding: 1.5rem;
     }
@@ -759,7 +790,8 @@ footer a:hover {
 
 @media (max-width: 480px) {
     .category-filters-container h3,
-    .data-persistence-container h3 {
+    .data-persistence-container h3,
+    .source-filters-container h3 {
         font-size: 1.1rem;
     }
     
@@ -786,7 +818,7 @@ footer a:hover {
 }
 
 .paper-card:hover h3 {
-    color: #0D47A1;
+    color: var(--dark-gray);
 }
 
 #paper-grid p {
@@ -798,6 +830,7 @@ footer a:hover {
     background: var(--white);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-light);
+    border: var(--border);
 }
 
 .paper-card:focus,
@@ -805,7 +838,7 @@ footer a:hover {
 header nav a.nav-link:focus,
 .modal-content a:focus,
 .close-button:focus {
-    outline: 3px solid var(--accent-yellow);
+    outline: 3px solid var(--primary-green);
     outline-offset: 4px;
 }
 
