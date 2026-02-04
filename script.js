@@ -78,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportJsonBtn = document.getElementById('export-json');
     const exportCsvBtn = document.getElementById('export-csv');
     const exportMarkdownBtn = document.getElementById('export-markdown');
+    const exportRisBtn = document.getElementById('export-ris');
     const saveLocalBtn = document.getElementById('save-local');
     const loadLocalBtn = document.getElementById('load-local');
     const saveStatus = document.getElementById('save-status');
@@ -446,6 +447,65 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error exporting Markdown:', error);
             showSaveStatus('Error exporting Markdown', false);
+        }
+    }
+
+    function formatRisDate(dateStr) {
+        if (!dateStr) return null;
+        const date = new Date(dateStr);
+        if (isNaN(date)) return null;
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        return { year, date: `${year}/${month}/${day}` };
+    }
+
+    function exportToRis() {
+        try {
+            const lines = [];
+
+            allPapers.forEach(paper => {
+                lines.push('TY  - JOUR');
+                if (paper.title) lines.push(`TI  - ${paper.title}`);
+
+                if (Array.isArray(paper.authors)) {
+                    paper.authors.forEach(author => {
+                        if (author) lines.push(`AU  - ${author}`);
+                    });
+                }
+
+                const risDate = formatRisDate(paper.date);
+                if (risDate) {
+                    lines.push(`PY  - ${risDate.year}`);
+                    lines.push(`DA  - ${risDate.date}`);
+                }
+
+                if (paper.doi) lines.push(`DO  - ${paper.doi}`);
+                if (paper.url && paper.url !== '#') lines.push(`UR  - ${paper.url}`);
+                if (paper.abstract) lines.push(`AB  - ${paper.abstract}`);
+
+                if (Array.isArray(paper.categories)) {
+                    paper.categories.forEach(cat => {
+                        if (cat) lines.push(`KW  - ${cat}`);
+                    });
+                }
+
+                lines.push('ER  -');
+                lines.push('');
+            });
+
+            const risContent = lines.join('\r\n');
+            const dataBlob = new Blob([risContent], { type: 'application/x-research-info-systems' });
+
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `foodAI-living-review-${new Date().toISOString().split('T')[0]}.ris`;
+            link.click();
+
+            showSaveStatus('RIS exported successfully!');
+        } catch (error) {
+            console.error('Error exporting RIS:', error);
+            showSaveStatus('Error exporting RIS', false);
         }
     }
 
@@ -1158,6 +1218,7 @@ document.addEventListener('DOMContentLoaded', () => {
     exportJsonBtn.addEventListener('click', exportToJson);
     exportCsvBtn.addEventListener('click', exportToCsv);
     exportMarkdownBtn.addEventListener('click', exportToMarkdown);
+    exportRisBtn.addEventListener('click', exportToRis);
     saveLocalBtn.addEventListener('click', saveToLocal);
     loadLocalBtn.addEventListener('click', loadFromLocal);
 
