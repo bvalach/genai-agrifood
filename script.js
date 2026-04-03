@@ -91,6 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let availableCategories = new Set(); // Categorías disponibles
     let availableSources = new Set(); // Fuentes disponibles
     let selectedSources = new Set(); // Fuentes seleccionadas
+    let searchTerm = ''; // Término de búsqueda
 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -318,10 +319,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const minDate = monthIndexToDate(minVal, baseYear);
         const maxDate = monthIndexToDate(maxVal + 1, baseYear);
 
-        const fullyFiltered = categoryFiltered.filter(paper => {
+        const dateFiltered = categoryFiltered.filter(paper => {
             if (!paper.date) return false;
             const paperDate = new Date(paper.date);
             return paperDate >= minDate && paperDate < maxDate;
+        });
+
+        // Filtrar por término de búsqueda
+        const fullyFiltered = dateFiltered.filter(paper => {
+            if (!searchTerm) return true;
+            const term = searchTerm.toLowerCase();
+            const searchable = [
+                paper.title || '',
+                Array.isArray(paper.authors) ? paper.authors.join(' ') : '',
+                paper.abstract || '',
+                paper.doi || '',
+                paper.categories ? paper.categories.join(' ') : '',
+                paper.source || ''
+            ].join(' ').toLowerCase();
+            return searchable.includes(term);
         });
 
         displayPapers(fullyFiltered);
@@ -984,6 +1000,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Enriquecer abstracts faltantes usando Semantic Scholar batch API
+    async function enrichMissingAbstracts(papers) {
+        const needEnrichment = papers.filter(p =>
+            (!p.abstract || p.abstract === '' || p.abstract === 'No abstract available.') && p.doi
+        );
+
+        if (needEnrichment.length === 0) return;
+
+        console.log(`Enriching ${needEnrichment.length} papers missing abstracts via Semantic Scholar...`);
+
+        const batchSize = 200;
+        for (let i = 0; i < needEnrichment.length; i += batchSize) {
+            const batch = needEnrichment.slice(i, i + batchSize);
+            const ids = batch.map(p => `DOI:${p.doi}`);
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+                const response = await fetch('https://api.semanticscholar.org/graph/v1/paper/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids, fields: 'abstract' }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    console.warn('Abstract enrichment batch failed:', response.status);
+                    continue;
+                }
+
+                const results = await response.json();
+                results.forEach((result, index) => {
+                    if (result && result.abstract) {
+                        batch[index].abstract = truncateText(result.abstract, 3000);
+                    }
+                });
+
+                console.log(`Enrichment batch ${Math.floor(i / batchSize) + 1}: processed ${batch.length} papers`);
+
+                if (i + batchSize < needEnrichment.length) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            } catch (error) {
+                console.warn('Abstract enrichment batch error:', error.message);
+            }
+        }
+
+        const stillMissing = papers.filter(p =>
+            !p.abstract || p.abstract === '' || p.abstract === 'No abstract available.'
+        ).length;
+        console.log(`After enrichment: ${stillMissing} papers still without abstract`);
+    }
+
     async function loadAllPapers(isBackgroundRefresh = false) {
         if (!isBackgroundRefresh) {
             showLoadingState();
@@ -1010,12 +1082,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Eliminar duplicados basándose en títulos similares
-            const uniquePapers = Array.from(
-                new Map(allPapers.map(p => [p.title.toLowerCase().trim(), p])).values()
-            );
+            // Eliminar duplicados fusionando datos (preferir el mejor abstract, DOI, URL)
+            const paperMap = new Map();
+            allPapers.forEach(p => {
+                const key = p.title.toLowerCase().trim();
+                const existing = paperMap.get(key);
+                if (!existing) {
+                    paperMap.set(key, p);
+                } else {
+                    // Preferir abstract no vacío
+                    const existingHasAbstract = existing.abstract && existing.abstract !== '' && existing.abstract !== 'No abstract available.';
+                    const newHasAbstract = p.abstract && p.abstract !== '' && p.abstract !== 'No abstract available.';
+                    if (!existingHasAbstract && newHasAbstract) {
+                        existing.abstract = p.abstract;
+                    }
+                    // Preferir DOI si falta
+                    if (!existing.doi && p.doi) {
+                        existing.doi = p.doi;
+                    }
+                    // Preferir URL real si falta
+                    if ((!existing.url || existing.url === '#') && p.url && p.url !== '#') {
+                        existing.url = p.url;
+                    }
+                    // Fusionar categorías
+                    if (p.categories) {
+                        const cats = new Set([...(existing.categories || []), ...p.categories]);
+                        existing.categories = Array.from(cats);
+                    }
+                }
+            });
+            const uniquePapers = Array.from(paperMap.values());
 
             console.log('Unique papers after deduplication:', uniquePapers.length);
+
+            // Enriquecer abstracts faltantes
+            await enrichMissingAbstracts(uniquePapers);
 
             // Filtrar por fecha (papers desde 2023)
             const filterDate = new Date('2023-01-01');
@@ -1093,32 +1194,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Añadir etiquetas de fuente y categoría
         const tagsContainer = document.createElement('div');
         tagsContainer.className = 'paper-tags';
-        tagsContainer.style.cssText = 'margin-top: 0.5rem; margin-bottom: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;';
 
         if (paper.source) {
             const sourceTag = document.createElement('span');
-            sourceTag.className = 'source-tag';
+            const sourceClass = paper.source.toLowerCase().replace(/\s/g, '');
+            sourceTag.className = `source-tag source-${sourceClass}`;
             sourceTag.textContent = paper.source;
-            sourceTag.style.cssText = `
-                padding: 0.2rem 0.6rem;
-                border-radius: 12px;
-                font-size: 0.75rem;
-                font-weight: 600;
-            `;
-
-            let bgColor, fgColor;
-            switch (paper.source) {
-                case 'arXiv':
-                    bgColor = '#FDECDF'; fgColor = '#B75C09'; break;
-                case 'SemanticScholar':
-                    bgColor = '#DDEBFF'; fgColor = '#0052CC'; break;
-                case 'Crossref':
-                    bgColor = '#E3FCEF'; fgColor = '#006644'; break;
-                default:
-                    bgColor = '#EBECF0'; fgColor = '#42526E';
-            }
-            sourceTag.style.backgroundColor = bgColor;
-            sourceTag.style.color = fgColor;
             tagsContainer.appendChild(sourceTag);
         }
         
@@ -1127,14 +1208,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const categoryTag = document.createElement('span');
                 categoryTag.className = 'category-tag';
                 categoryTag.textContent = category;
-                categoryTag.style.cssText = `
-                    background: var(--primary-green);
-                    color: #2c2c2c;
-                    padding: 0.2rem 0.5rem;
-                    border-radius: 12px;
-                    font-size: 0.75rem;
-                    font-weight: 500;
-                `;
                 tagsContainer.appendChild(categoryTag);
             });
         }
@@ -1234,6 +1307,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event listeners for source filters
     selectAllSourcesBtn.addEventListener('click', selectAllSources);
     clearAllSourcesBtn.addEventListener('click', clearAllSources);
+
+    // Event listener for search
+    const searchInput = document.getElementById('paper-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            searchTerm = e.target.value.trim();
+            applyFilters();
+        });
+    }
 
     // Event listeners for data persistence
     exportJsonBtn.addEventListener('click', exportToJson);

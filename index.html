@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,22 +8,32 @@
     <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    <title>foodAI - Generative AI in AgriFood</title>
+    <title>foodAI — Generative AI in AgriFood</title>
     <link rel="stylesheet" href="style.css">
+    <script src="theme.js"></script>
 </head>
 <body>
-    <header>
-        <h1>foodAI</h1>
-        <h2>A living review on Generative AI in the AgriFood sector</h2>
-        <p class="loading-notice">Please note: Data sources may take a moment to load (in particular, Crossref). If you only see results from arXiv or arXiv and Semantic Scholar, please refresh the page (F5) to load all sources.</p>
-        <div class="acknowledgement">
-            <p><strong>PhD Candidate:</strong> Dra Beatriz Vallina</p>
-            <p><strong>Supervisors:</strong> Dr Roberto Cervelló & Dr Juan José Lull</p>
+
+    <nav class="top-bar">
+        <a href="index.html" class="brand">foodAI</a>
+        <div class="top-bar-actions">
+            <a href="mapa.html" class="nav-link">Literature Map</a>
+            <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme"></button>
         </div>
-        <nav>
-            <a href="mapa.html" class="nav-link">View Literature map</a>
-        </nav>
+    </nav>
+
+    <header>
+        <p class="hero-eyebrow">GenAI Agrifood Observatory</p>
+        <h1>A living review on Generative AI in the AgriFood sector</h1>
+        <div class="header-info">
+            <p class="loading-notice">Data sources may take a moment to load (especially Crossref). If results appear incomplete, refresh the page.</p>
+            <div class="acknowledgement">
+                <p><strong>PhD Candidate</strong> Dra Beatriz Vallina</p>
+                <p><strong>Supervisors</strong> Dr Roberto Cervelló &amp; Dr Juan José Lull</p>
+            </div>
+        </div>
     </header>
+
     <div class="timeline-container">
         <h3>Filter by Publication Date</h3>
         <div class="timeline-controls">
@@ -38,48 +48,50 @@
             <div class="timeline-selected">
                 <span>Selected range: </span>
                 <span id="selected-range">Jan 2025 - Dec 2026</span>
-                <button id="reset-timeline">Reset</button>
+                <button id="reset-timeline" type="button">Reset</button>
             </div>
         </div>
     </div>
 
     <div class="source-filters-container">
         <h3>Filter by Source</h3>
-        <div class="source-filters" id="source-filters">
-            <!-- Source filter buttons will be inserted here by JavaScript -->
-        </div>
+        <div class="source-filters" id="source-filters"></div>
         <div class="filter-actions">
-            <button id="select-all-sources" class="filter-action-btn">Select All</button>
-            <button id="clear-all-sources" class="filter-action-btn">Clear All</button>
+            <button id="select-all-sources" class="filter-action-btn" type="button">Select All</button>
+            <button id="clear-all-sources" class="filter-action-btn" type="button">Clear All</button>
         </div>
     </div>
-    
+
     <div class="category-filters-container">
         <h3>Filter by Category</h3>
-        <div class="category-filters" id="category-filters">
-            <!-- Category filter buttons will be inserted here by JavaScript -->
-        </div>
+        <div class="category-filters" id="category-filters"></div>
         <div class="filter-actions">
-            <button id="select-all-categories" class="filter-action-btn">Select All</button>
-            <button id="clear-all-categories" class="filter-action-btn">Clear All</button>
+            <button id="select-all-categories" class="filter-action-btn" type="button">Select All</button>
+            <button id="clear-all-categories" class="filter-action-btn" type="button">Clear All</button>
         </div>
     </div>
-    
+
     <div class="data-persistence-container">
         <h3>Living Review Management</h3>
         <div class="persistence-controls">
-            <button id="export-json" class="export-btn">📄 Export JSON</button>
-            <button id="export-csv" class="export-btn">📊 Export CSV</button>
-            <button id="export-markdown" class="export-btn">📝 Export Markdown</button>
-            <button id="export-ris" class="export-btn">🧾 Export RIS</button>
-            <button id="save-local" class="export-btn">💾 Save Locally</button>
-            <button id="load-local" class="export-btn">📂 Load Saved</button>
+            <button id="export-json" class="export-btn" type="button">Export JSON</button>
+            <button id="export-csv" class="export-btn" type="button">Export CSV</button>
+            <button id="export-markdown" class="export-btn" type="button">Export Markdown</button>
+            <button id="export-ris" class="export-btn" type="button">Export RIS</button>
+            <button id="save-local" class="export-btn" type="button">Save Locally</button>
+            <button id="load-local" class="export-btn" type="button">Load Saved</button>
             <span id="save-status" class="save-status"></span>
         </div>
     </div>
-    <main id="paper-grid">
-        <!-- Paper cards will be inserted here by JavaScript -->
-    </main>
+
+    <div class="search-container">
+        <div class="search-wrapper">
+            <input type="text" id="paper-search" placeholder="Search papers by title, author, keyword, DOI...">
+        </div>
+    </div>
+
+    <main id="paper-grid"></main>
+
     <div id="modal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -88,13 +100,15 @@
             <p id="modal-date"></p>
             <p id="modal-doi"></p>
             <p id="modal-abstract"></p>
-            <a id="modal-link" href="#" target="_blank">Read Paper</a>
+            <a id="modal-link" href="#" target="_blank" rel="noopener noreferrer">Read Paper</a>
         </div>
     </div>
+
     <script src="script.js"></script>
+
     <footer>
-        <p>&copy; 2025 | Research by <a href="https://www.linkedin.com/in/beatrizvallina/" target="_blank">Beatriz Vallina</a></p>
-        <p>Agrifood Economics, Universitat Politècnica de València</p>
+        <p>&copy; 2026 | Research by <a href="https://www.linkedin.com/in/beatrizvallina/" target="_blank" rel="noopener noreferrer">Beatriz Vallina</a></p>
+        <p>Agrifood Economics, Universitat Politecnica de Valencia</p>
     </footer>
 </body>
-</html> 
+</html>
