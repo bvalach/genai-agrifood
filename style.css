@@ -184,13 +184,31 @@ h1, h2, h3 {
     font-size: .85rem;
     font-weight: 600;
     color: var(--on-surface-variant);
-    transition: color var(--transition);
+    transition: all var(--transition);
     padding: .4rem .8rem;
     border-radius: var(--radius);
 }
 .top-bar .nav-link:hover {
     color: var(--primary);
     background: var(--primary-glow);
+}
+
+.top-bar .nav-link--featured {
+    background: linear-gradient(135deg, var(--primary), var(--primary-container));
+    color: var(--primary-on);
+    font-weight: 700;
+    padding: .45rem 1.1rem;
+    border-radius: 9999px;
+    font-size: .8rem;
+    letter-spacing: .01em;
+}
+.top-bar .nav-link--featured:hover {
+    color: var(--primary-on);
+    box-shadow: 0 4px 14px rgba(68,223,171,.3);
+    transform: translateY(-1px);
+}
+[data-theme="light"] .top-bar .nav-link--featured:hover {
+    box-shadow: 0 4px 14px rgba(0,158,120,.2);
 }
 
 /* ----- 5. HEADER / HERO ----- */
@@ -285,6 +303,19 @@ header h1 {
 /* First section gets top margin */
 .timeline-container { margin-top: 1.5rem; }
 
+/* Filters side-by-side */
+.filters-row {
+    display: flex;
+    gap: .5rem;
+    max-width: 1200px;
+    margin: .5rem auto;
+}
+.filters-row .source-filters-container,
+.filters-row .category-filters-container {
+    flex: 1;
+    margin: 0;
+}
+
 /* Section headings */
 .timeline-container h3,
 .source-filters-container h3,
@@ -318,6 +349,19 @@ header h1 {
 .timeline-slider {
     position: relative;
     height: 36px;
+}
+
+.timeline-slider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--surface-container-high);
+    border-radius: 2px;
+    transform: translateY(-50%);
+    pointer-events: none;
 }
 
 .timeline-slider input[type="range"] {
@@ -938,6 +982,12 @@ footer a:hover {
     .header-info {
         flex-direction: column;
         gap: .75rem;
+    }
+
+    .filters-row {
+        flex-direction: column;
+        margin-left: .75rem;
+        margin-right: .75rem;
     }
 
     .search-container {
