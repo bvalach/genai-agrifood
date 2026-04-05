@@ -1,15 +1,61 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- DOM References ---
     const paperGrid = document.getElementById('paper-grid');
-    const modal = document.getElementById('modal');
-    const closeButton = document.querySelector('.close-button');
+    const searchInput = document.getElementById('paper-search');
+
+    // Modal elements
+    const modalBackdrop = document.getElementById('modal');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
     const modalTitle = document.getElementById('modal-title');
     const modalAuthors = document.getElementById('modal-authors');
     const modalDate = document.getElementById('modal-date');
     const modalDoi = document.getElementById('modal-doi');
+    const modalSource = document.getElementById('modal-source');
+    const modalCategories = document.getElementById('modal-categories');
     const modalAbstract = document.getElementById('modal-abstract');
     const modalLink = document.getElementById('modal-link');
+    const modalCiteBtn = document.getElementById('modal-cite');
+    const modalCopyDoiBtn = document.getElementById('modal-copy-doi');
 
-    // FUNCIONES DE SEGURIDAD
+    // Filter elements
+    const dateFromInput = document.getElementById('date-from');
+    const dateToInput = document.getElementById('date-to');
+    const filterSourceSelect = document.getElementById('filter-source');
+    const filterCategorySelect = document.getElementById('filter-category');
+    const applyFiltersBtn = document.getElementById('apply-filters');
+    const resetFiltersBtn = document.getElementById('reset-filters');
+
+    // Source & category chip containers
+    const sourceFiltersContainer = document.getElementById('source-filters');
+    const categoryFiltersContainer = document.getElementById('category-filters');
+    const selectAllSourcesBtn = document.getElementById('select-all-sources');
+    const clearAllSourcesBtn = document.getElementById('clear-all-sources');
+    const selectAllCategoriesBtn = document.getElementById('select-all-categories');
+    const clearAllCategoriesBtn = document.getElementById('clear-all-categories');
+
+    // Export elements
+    const exportToggleBtn = document.getElementById('export-toggle');
+    const exportMenu = document.getElementById('export-menu');
+    const exportJsonBtn = document.getElementById('export-json');
+    const exportCsvBtn = document.getElementById('export-csv');
+    const exportMarkdownBtn = document.getElementById('export-markdown');
+    const exportRisBtn = document.getElementById('export-ris');
+    const saveLocalBtn = document.getElementById('save-local');
+    const loadLocalBtn = document.getElementById('load-local');
+    const mobileExportBtn = document.getElementById('mobile-export-btn');
+
+    // Stats
+    const statTotal = document.getElementById('stat-total');
+    const statSources = document.getElementById('stat-sources');
+    const statCategories = document.getElementById('stat-categories');
+
+    // Other
+    const refreshBtn = document.getElementById('refresh-btn');
+    const statusToast = document.getElementById('status-toast');
+    const statusIcon = document.getElementById('status-icon');
+    const statusText = document.getElementById('status-text');
+
+    // --- Security Functions ---
     function escapeHtml(unsafe) {
         if (!unsafe) return '';
         return unsafe
@@ -22,8 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function sanitizeUrl(url) {
         if (!url) return '#';
-        
-        // Permitir solo URLs HTTPS/HTTP válidas
         try {
             const urlObj = new URL(url);
             if (urlObj.protocol === 'https:' || urlObj.protocol === 'http:') {
@@ -37,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function sanitizeDoi(doi) {
         if (!doi) return '';
-        // DOI debe seguir el formato estándar: 10.xxxx/xxxxx
         const doiPattern = /^10\.\d{4,}\/[^\s]+$/;
         return doiPattern.test(doi) ? doi : '';
     }
@@ -56,47 +99,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Timeline elements
-    const dateSliderMin = document.getElementById('date-slider-min');
-    const dateSliderMax = document.getElementById('date-slider-max');
-    const selectedRange = document.getElementById('selected-range');
-    const resetButton = document.getElementById('reset-timeline');
-    const minDateLabel = document.getElementById('min-date');
-    const maxDateLabel = document.getElementById('max-date');
-
-    // Source filter elements
-    const sourceFiltersContainer = document.getElementById('source-filters');
-    const selectAllSourcesBtn = document.getElementById('select-all-sources');
-    const clearAllSourcesBtn = document.getElementById('clear-all-sources');
-
-    // Category filter elements
-    const categoryFiltersContainer = document.getElementById('category-filters');
-    const selectAllBtn = document.getElementById('select-all-categories');
-    const clearAllBtn = document.getElementById('clear-all-categories');
-
-    // Persistence elements
-    const exportJsonBtn = document.getElementById('export-json');
-    const exportCsvBtn = document.getElementById('export-csv');
-    const exportMarkdownBtn = document.getElementById('export-markdown');
-    const exportRisBtn = document.getElementById('export-ris');
-    const saveLocalBtn = document.getElementById('save-local');
-    const loadLocalBtn = document.getElementById('load-local');
-    const saveStatus = document.getElementById('save-status');
-
+    // --- State ---
     let allPapers = [];
-    let filteredPapers = []; // Papers filtrados por categoría
-    let selectedCategories = new Set(); // Categorías seleccionadas
-    let dateRange = { min: 0, max: 48 }; // Índices de meses
-    let actualDateRange = { minDate: null, maxDate: null }; // Fechas reales
-    let availableCategories = new Set(); // Categorías disponibles
-    let availableSources = new Set(); // Fuentes disponibles
-    let selectedSources = new Set(); // Fuentes seleccionadas
-    let searchTerm = ''; // Término de búsqueda
+    let selectedCategories = new Set();
+    let availableCategories = new Set();
+    let availableSources = new Set();
+    let selectedSources = new Set();
+    let searchTerm = '';
+    let currentModalPaper = null; // For cite/copy DOI
 
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    // Date range state
+    let actualDateRange = { minDate: null, maxDate: null };
+    let filterDateFrom = null; // Date object or null
+    let filterDateTo = null;
 
-    // Categorías para auto-etiquetado
+    // --- Category Keywords ---
     const categoryKeywords = {
         'Synthetic Data': ['synthetic data', 'synthetic images', 'data augmentation', 'simulation'],
         'Disease Detection': ['disease detection', 'plant disease', 'crop disease', 'leaf disease', 'plant pathology', 'pest detection'],
@@ -111,42 +128,15 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const coreGenAiTerms = [
-        'generative ai',
-        'foundation model',
-        'large language model',
-        'small language model',
-        'llm',
-        'diffusion model',
-        'generative adversarial',
-        'gan',
-        'text-to-image',
-        'text to image',
-        'multimodal',
-        'vision-language',
-        'synthetic data',
-        'prompt'
+        'generative ai', 'foundation model', 'large language model', 'small language model',
+        'llm', 'diffusion model', 'generative adversarial', 'gan', 'text-to-image',
+        'text to image', 'multimodal', 'vision-language', 'synthetic data', 'prompt'
     ];
 
     const agriFoodTerms = [
-        'agriculture',
-        'agricultural',
-        'agrifood',
-        'agri-food',
-        'farming',
-        'farm',
-        'crop',
-        'soil',
-        'plant',
-        'horticulture',
-        'livestock',
-        'dairy',
-        'aquaculture',
-        'food industry',
-        'food processing',
-        'food safety',
-        'food quality',
-        'supply chain',
-        'agro'
+        'agriculture', 'agricultural', 'agrifood', 'agri-food', 'farming', 'farm',
+        'crop', 'soil', 'plant', 'horticulture', 'livestock', 'dairy', 'aquaculture',
+        'food industry', 'food processing', 'food safety', 'food quality', 'supply chain', 'agro'
     ];
 
     function isRelevantPaper(paper) {
@@ -156,29 +146,62 @@ document.addEventListener('DOMContentLoaded', () => {
         return hasGenAi && hasAgriFood;
     }
 
-    // Función para auto-etiquetar papers
     function categorizePaper(paper) {
         const text = `${paper.title} ${paper.abstract}`.toLowerCase();
         const categories = [];
-        
         for (const [category, keywords] of Object.entries(categoryKeywords)) {
             if (keywords.some(keyword => text.includes(keyword.toLowerCase()))) {
                 categories.push(category);
             }
         }
-        
         return categories.length > 0 ? categories : ['Other'];
     }
 
-    // Funciones de filtrado por fuente
+    // --- Stats ---
+    function updateStats() {
+        if (statTotal) statTotal.textContent = allPapers.length || '--';
+        if (statSources) statSources.textContent = availableSources.size || '--';
+        if (statCategories) statCategories.textContent = availableCategories.size || '--';
+    }
+
+    // --- Status Toast ---
+    let toastTimeout = null;
+    function showStatus(message, isSuccess = true) {
+        if (!statusToast) return;
+        statusText.textContent = message;
+        statusIcon.textContent = isSuccess ? 'check_circle' : 'error';
+        statusToast.classList.toggle('error', !isSuccess);
+        statusToast.classList.add('visible');
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+            statusToast.classList.remove('visible');
+        }, 3500);
+    }
+
+    // --- Export Dropdown ---
+    function toggleExportMenu() {
+        exportMenu.classList.toggle('open');
+    }
+
+    function closeExportMenu() {
+        exportMenu.classList.remove('open');
+    }
+
+    // Close export menu on outside click
+    document.addEventListener('click', (e) => {
+        if (exportMenu && !exportMenu.contains(e.target) && e.target !== exportToggleBtn && !exportToggleBtn.contains(e.target)) {
+            closeExportMenu();
+        }
+    });
+
+    // --- Source Filters ---
     function initializeSourceFilters() {
         availableSources.clear();
         allPapers.forEach(paper => {
-            if (paper.source) {
-                availableSources.add(paper.source);
-            }
+            if (paper.source) availableSources.add(paper.source);
         });
 
+        // Populate chip buttons
         sourceFiltersContainer.innerHTML = '';
         const hasSavedSelection = selectedSources.size > 0;
 
@@ -187,16 +210,28 @@ document.addEventListener('DOMContentLoaded', () => {
             button.className = 'source-filter-btn';
             button.textContent = source;
             button.dataset.source = source;
-
+            button.type = 'button';
             button.addEventListener('click', () => toggleSource(source));
             sourceFiltersContainer.appendChild(button);
 
             if (!hasSavedSelection) {
-                selectedSources.add(source); // Inicialmente todas seleccionadas
+                selectedSources.add(source);
             }
         });
-
         updateSourceButtons();
+
+        // Populate dropdown select
+        if (filterSourceSelect) {
+            const currentVal = filterSourceSelect.value;
+            filterSourceSelect.innerHTML = '<option value="all">All Sources</option>';
+            availableSources.forEach(source => {
+                const opt = document.createElement('option');
+                opt.value = source;
+                opt.textContent = source;
+                filterSourceSelect.appendChild(opt);
+            });
+            filterSourceSelect.value = currentVal || 'all';
+        }
     }
 
     function toggleSource(source) {
@@ -205,7 +240,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             selectedSources.add(source);
         }
-
         updateSourceButtons();
         applyFilters();
     }
@@ -214,16 +248,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const buttons = sourceFiltersContainer.querySelectorAll('.source-filter-btn');
         buttons.forEach(button => {
             const source = button.dataset.source;
-            if (selectedSources.has(source)) {
-                button.classList.add('active');
-            } else {
-                button.classList.remove('active');
-            }
+            button.classList.toggle('active', selectedSources.has(source));
         });
     }
 
     function selectAllSources() {
         availableSources.forEach(src => selectedSources.add(src));
+        if (filterSourceSelect) filterSourceSelect.value = 'all';
         updateSourceButtons();
         applyFilters();
     }
@@ -234,9 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
         applyFilters();
     }
 
-    // Funciones de filtrado por categorías
+    // --- Category Filters ---
     function initializeCategoryFilters() {
-        // Recopilar todas las categorías disponibles
         availableCategories.clear();
         allPapers.forEach(paper => {
             if (paper.categories) {
@@ -244,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Crear botones de filtro
+        // Populate chip buttons
         categoryFiltersContainer.innerHTML = '';
         const hasSavedSelection = selectedCategories.size > 0;
         availableCategories.forEach(category => {
@@ -252,16 +282,28 @@ document.addEventListener('DOMContentLoaded', () => {
             button.className = 'category-filter-btn';
             button.textContent = category;
             button.dataset.category = category;
-            
+            button.type = 'button';
             button.addEventListener('click', () => toggleCategory(category));
             categoryFiltersContainer.appendChild(button);
-            
+
             if (!hasSavedSelection) {
-                selectedCategories.add(category); // Inicialmente todas seleccionadas
+                selectedCategories.add(category);
             }
         });
-
         updateCategoryButtons();
+
+        // Populate dropdown select
+        if (filterCategorySelect) {
+            const currentVal = filterCategorySelect.value;
+            filterCategorySelect.innerHTML = '<option value="all">All Categories</option>';
+            Array.from(availableCategories).sort().forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                filterCategorySelect.appendChild(opt);
+            });
+            filterCategorySelect.value = currentVal || 'all';
+        }
     }
 
     function toggleCategory(category) {
@@ -270,7 +312,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             selectedCategories.add(category);
         }
-        
         updateCategoryButtons();
         applyFilters();
     }
@@ -279,16 +320,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const buttons = categoryFiltersContainer.querySelectorAll('.category-filter-btn');
         buttons.forEach(button => {
             const category = button.dataset.category;
-            if (selectedCategories.has(category)) {
-                button.classList.add('active');
-            } else {
-                button.classList.remove('active');
-            }
+            button.classList.toggle('active', selectedCategories.has(category));
         });
     }
 
     function selectAllCategories() {
         availableCategories.forEach(cat => selectedCategories.add(cat));
+        if (filterCategorySelect) filterCategorySelect.value = 'all';
         updateCategoryButtons();
         applyFilters();
     }
@@ -299,60 +337,138 @@ document.addEventListener('DOMContentLoaded', () => {
         applyFilters();
     }
 
+    // --- Date Filtering ---
+    function initializeDateRange(papers) {
+        if (papers.length === 0) return;
+
+        const dates = papers
+            .filter(p => p.date)
+            .map(p => new Date(p.date))
+            .filter(d => !isNaN(d));
+        if (dates.length === 0) return;
+
+        const minDate = new Date(Math.min(...dates));
+        const maxDate = new Date(Math.max(...dates));
+        actualDateRange = { minDate, maxDate };
+
+        // Set month input defaults
+        if (dateFromInput) {
+            dateFromInput.value = `${minDate.getFullYear()}-${String(minDate.getMonth() + 1).padStart(2, '0')}`;
+        }
+        if (dateToInput) {
+            dateToInput.value = `${maxDate.getFullYear()}-${String(maxDate.getMonth() + 1).padStart(2, '0')}`;
+        }
+        filterDateFrom = null;
+        filterDateTo = null;
+    }
+
+    // --- Combined Filter Logic ---
     function applyFilters() {
-        // Filtrar por fuentes
-        const sourceFiltered = allPapers.filter(paper => {
+        // Source filter
+        let result = allPapers.filter(paper => {
             if (selectedSources.size === 0) return false;
             return paper.source && selectedSources.has(paper.source);
         });
 
-        // Filtrar por categorías
-        const categoryFiltered = sourceFiltered.filter(paper => {
+        // Category filter
+        result = result.filter(paper => {
             if (selectedCategories.size === 0) return false;
             return paper.categories && paper.categories.some(cat => selectedCategories.has(cat));
         });
 
-        // Aplicar filtros de fecha también
-        const minVal = parseInt(dateSliderMin.value);
-        const maxVal = parseInt(dateSliderMax.value);
-        const baseYear = actualDateRange.minDate ? actualDateRange.minDate.getFullYear() : 2025;
-        const minDate = monthIndexToDate(minVal, baseYear);
-        const maxDate = monthIndexToDate(maxVal + 1, baseYear);
+        // Date filter (from month inputs)
+        if (filterDateFrom) {
+            result = result.filter(paper => {
+                if (!paper.date) return false;
+                return new Date(paper.date) >= filterDateFrom;
+            });
+        }
+        if (filterDateTo) {
+            const endOfMonth = new Date(filterDateTo.getFullYear(), filterDateTo.getMonth() + 1, 0, 23, 59, 59);
+            result = result.filter(paper => {
+                if (!paper.date) return false;
+                return new Date(paper.date) <= endOfMonth;
+            });
+        }
 
-        const dateFiltered = categoryFiltered.filter(paper => {
-            if (!paper.date) return false;
-            const paperDate = new Date(paper.date);
-            return paperDate >= minDate && paperDate < maxDate;
-        });
-
-        // Filtrar por término de búsqueda
-        const fullyFiltered = dateFiltered.filter(paper => {
-            if (!searchTerm) return true;
+        // Search filter
+        if (searchTerm) {
             const term = searchTerm.toLowerCase();
-            const searchable = [
-                paper.title || '',
-                Array.isArray(paper.authors) ? paper.authors.join(' ') : '',
-                paper.abstract || '',
-                paper.doi || '',
-                paper.categories ? paper.categories.join(' ') : '',
-                paper.source || ''
-            ].join(' ').toLowerCase();
-            return searchable.includes(term);
-        });
+            result = result.filter(paper => {
+                const searchable = [
+                    paper.title || '',
+                    Array.isArray(paper.authors) ? paper.authors.join(' ') : '',
+                    paper.abstract || '',
+                    paper.doi || '',
+                    paper.categories ? paper.categories.join(' ') : '',
+                    paper.source || ''
+                ].join(' ').toLowerCase();
+                return searchable.includes(term);
+            });
+        }
 
-        displayPapers(fullyFiltered);
+        displayPapers(result);
     }
 
-    // Funciones de persistencia de datos
-    function showSaveStatus(message, isSuccess = true) {
-        saveStatus.textContent = message;
-        saveStatus.className = `save-status ${isSuccess ? 'success' : 'error'}`;
-        setTimeout(() => {
-            saveStatus.textContent = '';
-            saveStatus.className = 'save-status';
-        }, 3000);
+    function applyBarFilters() {
+        // Read from month inputs
+        if (dateFromInput && dateFromInput.value) {
+            const parts = dateFromInput.value.split('-');
+            filterDateFrom = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+        } else {
+            filterDateFrom = null;
+        }
+        if (dateToInput && dateToInput.value) {
+            const parts = dateToInput.value.split('-');
+            filterDateTo = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+        } else {
+            filterDateTo = null;
+        }
+
+        // Source dropdown
+        if (filterSourceSelect && filterSourceSelect.value !== 'all') {
+            selectedSources.clear();
+            selectedSources.add(filterSourceSelect.value);
+            updateSourceButtons();
+        }
+
+        // Category dropdown
+        if (filterCategorySelect && filterCategorySelect.value !== 'all') {
+            selectedCategories.clear();
+            selectedCategories.add(filterCategorySelect.value);
+            updateCategoryButtons();
+        }
+
+        applyFilters();
     }
 
+    function resetAllFilters() {
+        // Reset dates
+        filterDateFrom = null;
+        filterDateTo = null;
+        if (dateFromInput && actualDateRange.minDate) {
+            dateFromInput.value = `${actualDateRange.minDate.getFullYear()}-${String(actualDateRange.minDate.getMonth() + 1).padStart(2, '0')}`;
+        }
+        if (dateToInput && actualDateRange.maxDate) {
+            dateToInput.value = `${actualDateRange.maxDate.getFullYear()}-${String(actualDateRange.maxDate.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        // Reset dropdowns
+        if (filterSourceSelect) filterSourceSelect.value = 'all';
+        if (filterCategorySelect) filterCategorySelect.value = 'all';
+
+        // Reset chips (select all)
+        selectAllSources();
+        selectAllCategories();
+
+        // Reset search
+        searchTerm = '';
+        if (searchInput) searchInput.value = '';
+
+        applyFilters();
+    }
+
+    // --- Export Functions ---
     function exportToJson() {
         try {
             const exportData = {
@@ -365,19 +481,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     exportNote: 'Generated by foodAI Living Review System'
                 }))
             };
-
             const dataStr = JSON.stringify(exportData, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            
             const link = document.createElement('a');
             link.href = URL.createObjectURL(dataBlob);
             link.download = `foodAI-living-review-${new Date().toISOString().split('T')[0]}.json`;
             link.click();
-            
-            showSaveStatus('JSON exported successfully!');
+            closeExportMenu();
+            showStatus('JSON exported successfully!');
         } catch (error) {
             console.error('Error exporting JSON:', error);
-            showSaveStatus('Error exporting JSON', false);
+            showStatus('Error exporting JSON', false);
         }
     }
 
@@ -385,7 +499,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const headers = ['Title', 'Authors', 'Date', 'Categories', 'DOI', 'URL', 'Abstract'];
             const csvRows = [headers.join(',')];
-
             allPapers.forEach(paper => {
                 const row = [
                     `"${(paper.title || '').replace(/"/g, '""')}"`,
@@ -398,19 +511,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 ];
                 csvRows.push(row.join(','));
             });
-
             const csvContent = csvRows.join('\n');
             const dataBlob = new Blob([csvContent], { type: 'text/csv' });
-            
             const link = document.createElement('a');
             link.href = URL.createObjectURL(dataBlob);
             link.download = `foodAI-living-review-${new Date().toISOString().split('T')[0]}.csv`;
             link.click();
-            
-            showSaveStatus('CSV exported successfully!');
+            closeExportMenu();
+            showStatus('CSV exported successfully!');
         } catch (error) {
             console.error('Error exporting CSV:', error);
-            showSaveStatus('Error exporting CSV', false);
+            showStatus('Error exporting CSV', false);
         }
     }
 
@@ -422,7 +533,6 @@ document.addEventListener('DOMContentLoaded', () => {
             markdown += `**Total Papers:** ${allPapers.length}  \n`;
             markdown += `**Date Range:** ${actualDateRange.minDate?.toLocaleDateString()} - ${actualDateRange.maxDate?.toLocaleDateString()}  \n\n`;
 
-            // Categorías disponibles
             markdown += `## Categories\n\n`;
             Array.from(availableCategories).sort().forEach(category => {
                 const count = allPapers.filter(p => p.categories?.includes(category)).length;
@@ -430,13 +540,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             markdown += `\n`;
 
-            // Papers por categoría
             Array.from(availableCategories).sort().forEach(category => {
                 const categoryPapers = allPapers.filter(p => p.categories?.includes(category));
                 if (categoryPapers.length === 0) return;
-
                 markdown += `## ${category} (${categoryPapers.length} papers)\n\n`;
-                
                 categoryPapers.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(paper => {
                     markdown += `### ${paper.title || 'Untitled'}\n\n`;
                     markdown += `**Authors:** ${Array.isArray(paper.authors) ? paper.authors.join(', ') : 'N/A'}  \n`;
@@ -444,25 +551,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (paper.doi) markdown += `**DOI:** [${paper.doi}](https://doi.org/${paper.doi})  \n`;
                     if (paper.url && paper.url !== '#') markdown += `**URL:** [Paper Link](${paper.url})  \n`;
                     markdown += `**Categories:** ${paper.categories ? paper.categories.join(', ') : 'N/A'}  \n\n`;
-                    
-                    if (paper.abstract) {
-                        markdown += `**Abstract:**  \n${paper.abstract}\n\n`;
-                    }
+                    if (paper.abstract) markdown += `**Abstract:**  \n${paper.abstract}\n\n`;
                     markdown += `---\n\n`;
                 });
             });
 
             const dataBlob = new Blob([markdown], { type: 'text/markdown' });
-            
             const link = document.createElement('a');
             link.href = URL.createObjectURL(dataBlob);
             link.download = `foodAI-living-review-${new Date().toISOString().split('T')[0]}.md`;
             link.click();
-            
-            showSaveStatus('Markdown exported successfully!');
+            closeExportMenu();
+            showStatus('Markdown exported successfully!');
         } catch (error) {
             console.error('Error exporting Markdown:', error);
-            showSaveStatus('Error exporting Markdown', false);
+            showStatus('Error exporting Markdown', false);
         }
     }
 
@@ -479,52 +582,46 @@ document.addEventListener('DOMContentLoaded', () => {
     function exportToRis() {
         try {
             const lines = [];
-
             allPapers.forEach(paper => {
                 lines.push('TY  - JOUR');
                 if (paper.title) lines.push(`TI  - ${paper.title}`);
-
                 if (Array.isArray(paper.authors)) {
                     paper.authors.forEach(author => {
                         if (author) lines.push(`AU  - ${author}`);
                     });
                 }
-
                 const risDate = formatRisDate(paper.date);
                 if (risDate) {
                     lines.push(`PY  - ${risDate.year}`);
                     lines.push(`DA  - ${risDate.date}`);
                 }
-
                 if (paper.doi) lines.push(`DO  - ${paper.doi}`);
                 if (paper.url && paper.url !== '#') lines.push(`UR  - ${paper.url}`);
                 if (paper.abstract) lines.push(`AB  - ${paper.abstract}`);
-
                 if (Array.isArray(paper.categories)) {
                     paper.categories.forEach(cat => {
                         if (cat) lines.push(`KW  - ${cat}`);
                     });
                 }
-
                 lines.push('ER  -');
                 lines.push('');
             });
 
             const risContent = lines.join('\r\n');
             const dataBlob = new Blob([risContent], { type: 'application/x-research-info-systems' });
-
             const link = document.createElement('a');
             link.href = URL.createObjectURL(dataBlob);
             link.download = `foodAI-living-review-${new Date().toISOString().split('T')[0]}.ris`;
             link.click();
-
-            showSaveStatus('RIS exported successfully!');
+            closeExportMenu();
+            showStatus('RIS exported successfully!');
         } catch (error) {
             console.error('Error exporting RIS:', error);
-            showSaveStatus('Error exporting RIS', false);
+            showStatus('Error exporting RIS', false);
         }
     }
 
+    // --- Local Persistence ---
     function saveToLocal() {
         try {
             const saveData = {
@@ -536,21 +633,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 sources: Array.from(availableSources),
                 selectedSources: Array.from(selectedSources)
             };
-
             localStorage.setItem('foodAI-living-review', JSON.stringify(saveData));
-            // No mostrar mensaje al guardar automáticamente
         } catch (error) {
             console.error('Error saving locally:', error);
-            showSaveStatus('Error saving data automatically', false);
+            showStatus('Error saving data', false);
         }
+    }
+
+    function saveToLocalExplicit() {
+        saveToLocal();
+        showStatus(`Saved ${allPapers.length} papers locally.`);
     }
 
     function loadFromLocal() {
         try {
             const savedData = localStorage.getItem('foodAI-living-review');
-            if (!savedData) {
-                return null;
-            }
+            if (!savedData) return null;
 
             const data = JSON.parse(savedData);
             allPapers = data.papers || [];
@@ -560,111 +658,60 @@ document.addEventListener('DOMContentLoaded', () => {
             availableSources = new Set(data.sources || []);
             selectedSources = new Set(data.selectedSources || []);
 
-            initializeTimeline(allPapers);
+            initializeDateRange(allPapers);
             initializeSourceFilters();
             initializeCategoryFilters();
+            updateStats();
             applyFilters();
 
-            showSaveStatus(`Loaded ${allPapers.length} papers from cache.`, true);
-            return data; // Devolver los datos cargados
-
+            showStatus(`Loaded ${allPapers.length} papers from cache.`);
+            return data;
         } catch (error) {
             console.error('Error loading from local:', error);
-            showSaveStatus('Error loading cached data', false);
-            localStorage.removeItem('foodAI-living-review'); // Limpiar caché corrupta
+            showStatus('Error loading cached data', false);
+            localStorage.removeItem('foodAI-living-review');
             return null;
         }
     }
 
-    // Convertir fecha a índice de mes (0 = Jan 2025, 12 = Jan 2026, etc.)
-    function dateToMonthIndex(date, baseYear) {
-        const year = date.getFullYear();
-        const month = date.getMonth();
-        return (year - baseYear) * 12 + month;
+    // --- Grid States ---
+    function showLoadingState() {
+        paperGrid.innerHTML = '';
+        const container = document.createElement('div');
+        container.className = 'grid-state';
+        const spinner = document.createElement('div');
+        spinner.className = 'grid-spinner';
+        const title = document.createElement('p');
+        title.className = 'grid-title';
+        title.textContent = 'Loading latest research papers...';
+        const subtitle = document.createElement('p');
+        subtitle.className = 'grid-subtitle';
+        subtitle.textContent = 'This may take a few moments';
+        container.appendChild(spinner);
+        container.appendChild(title);
+        container.appendChild(subtitle);
+        paperGrid.appendChild(container);
     }
 
-    // Convertir índice de mes a fecha
-    function monthIndexToDate(index, baseYear) {
-        const year = baseYear + Math.floor(index / 12);
-        const month = index % 12;
-        return new Date(year, month, 1);
-    }
-
-    // Formatear fecha para mostrar
-    function formatMonthYear(index, baseYear) {
-        const date = monthIndexToDate(index, baseYear);
-        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-    }
-
-    // Timeline functionality
-    function updateDateRange() {
-        const minVal = parseInt(dateSliderMin.value);
-        const maxVal = parseInt(dateSliderMax.value);
-        
-        // Ensure min doesn't exceed max
-        if (minVal > maxVal) {
-            dateSliderMin.value = maxVal;
-        }
-        if (maxVal < minVal) {
-            dateSliderMax.value = minVal;
-        }
-        
-        const finalMin = parseInt(dateSliderMin.value);
-        const finalMax = parseInt(dateSliderMax.value);
-        
-        const baseYear = actualDateRange.minDate ? actualDateRange.minDate.getFullYear() : 2025;
-        const minText = formatMonthYear(finalMin, baseYear);
-        const maxText = formatMonthYear(finalMax, baseYear);
-        
-        selectedRange.textContent = `${minText} - ${maxText}`;
-        filterPapersByDateRange(finalMin, finalMax, baseYear);
-    }
-
-    function filterPapersByDateRange(minIndex, maxIndex, baseYear) {
-        // Usar la nueva función de filtros combinados
-        applyFilters();
-    }
-
-    function initializeTimeline(papers) {
-        if (papers.length === 0) return;
-        
-        const dates = papers
-            .filter(paper => paper.date)
-            .map(paper => new Date(paper.date))
-            .filter(date => !isNaN(date));
-        
-        if (dates.length === 0) return;
-        
-        const minDate = new Date(Math.min(...dates));
-        const maxDate = new Date(Math.max(...dates));
-        
-        actualDateRange = { minDate, maxDate };
-        
-        const baseYear = minDate.getFullYear();
-        const minIndex = dateToMonthIndex(minDate, baseYear);
-        const maxIndex = dateToMonthIndex(maxDate, baseYear);
-        
-        dateRange = { min: minIndex, max: maxIndex };
-        
-        // Update slider attributes
-        dateSliderMin.min = minIndex;
-        dateSliderMin.max = maxIndex;
-        dateSliderMin.value = minIndex;
-        
-        dateSliderMax.min = minIndex;
-        dateSliderMax.max = maxIndex;
-        dateSliderMax.value = maxIndex;
-        
-        // Update labels
-        minDateLabel.textContent = formatMonthYear(minIndex, baseYear);
-        maxDateLabel.textContent = formatMonthYear(maxIndex, baseYear);
-        selectedRange.textContent = `${formatMonthYear(minIndex, baseYear)} - ${formatMonthYear(maxIndex, baseYear)}`;
-    }
-
-    function resetTimeline() {
-        dateSliderMin.value = dateRange.min;
-        dateSliderMax.value = dateRange.max;
-        updateDateRange();
+    function showErrorState(message) {
+        paperGrid.innerHTML = '';
+        const container = document.createElement('div');
+        container.className = 'grid-state';
+        const icon = document.createElement('div');
+        icon.className = 'grid-icon';
+        icon.textContent = '\u26A0\uFE0F';
+        const msg = document.createElement('p');
+        msg.className = 'grid-title';
+        msg.textContent = message;
+        const button = document.createElement('button');
+        button.className = 'grid-retry';
+        button.type = 'button';
+        button.textContent = 'Try Again';
+        button.addEventListener('click', () => window.location.reload());
+        container.appendChild(icon);
+        container.appendChild(msg);
+        container.appendChild(button);
+        paperGrid.appendChild(container);
     }
 
     function showGridMessage(message) {
@@ -675,88 +722,195 @@ document.addEventListener('DOMContentLoaded', () => {
         paperGrid.appendChild(messageEl);
     }
 
-    // Mejorar el estado de carga
-    function showLoadingState() {
+    // --- Display Papers ---
+    function displayPapers(papers) {
         paperGrid.innerHTML = '';
-
-        const container = document.createElement('div');
-        container.className = 'grid-state';
-
-        const spinner = document.createElement('div');
-        spinner.className = 'grid-spinner';
-
-        const title = document.createElement('p');
-        title.className = 'grid-title';
-        title.textContent = 'Loading latest research papers...';
-
-        const subtitle = document.createElement('p');
-        subtitle.className = 'grid-subtitle';
-        subtitle.textContent = 'This may take a few moments';
-
-        container.appendChild(spinner);
-        container.appendChild(title);
-        container.appendChild(subtitle);
-        paperGrid.appendChild(container);
+        if (papers.length === 0) {
+            showGridMessage('No papers found matching the selected criteria.');
+            return;
+        }
+        papers.forEach(createPaperCard);
     }
 
-    function showErrorState(message) {
-        paperGrid.innerHTML = '';
+    function createPaperCard(paper) {
+        const card = document.createElement('div');
+        card.className = 'paper-card';
+        card.tabIndex = 0;
 
-        const container = document.createElement('div');
-        container.className = 'grid-state';
+        const safeDate = paper.date ? new Date(paper.date).toLocaleDateString() : 'N/A';
+        const safeDoi = sanitizeDoi(paper.doi);
 
-        const icon = document.createElement('div');
-        icon.className = 'grid-icon';
-        icon.textContent = '⚠️';
+        // Tags
+        const tagsContainer = document.createElement('div');
+        tagsContainer.className = 'paper-tags';
 
-        const msg = document.createElement('p');
-        msg.className = 'grid-title';
-        msg.textContent = message;
+        if (paper.source) {
+            const sourceTag = document.createElement('span');
+            const sourceClass = paper.source.toLowerCase().replace(/\s/g, '');
+            sourceTag.className = `source-tag source-${sourceClass}`;
+            sourceTag.textContent = paper.source;
+            tagsContainer.appendChild(sourceTag);
+        }
 
-        const button = document.createElement('button');
-        button.className = 'grid-retry';
-        button.type = 'button';
-        button.textContent = 'Try Again';
-        button.addEventListener('click', () => {
-            window.location.reload();
+        if (paper.categories && paper.categories.length > 0) {
+            paper.categories.forEach(category => {
+                const categoryTag = document.createElement('span');
+                categoryTag.className = 'category-tag';
+                categoryTag.textContent = category;
+                tagsContainer.appendChild(categoryTag);
+            });
+        }
+
+        if (tagsContainer.hasChildNodes()) card.appendChild(tagsContainer);
+
+        // Title
+        const titleElement = document.createElement('h3');
+        titleElement.textContent = paper.title || 'Untitled';
+        card.appendChild(titleElement);
+
+        // Authors
+        const authorsElement = document.createElement('p');
+        authorsElement.className = 'paper-authors';
+        authorsElement.textContent = Array.isArray(paper.authors) ? paper.authors.join(', ') : 'N/A';
+        card.appendChild(authorsElement);
+
+        // Date
+        const dateElement = document.createElement('p');
+        dateElement.className = 'paper-date';
+        dateElement.textContent = safeDate;
+        card.appendChild(dateElement);
+
+        // DOI
+        if (safeDoi) {
+            const doiElement = document.createElement('p');
+            doiElement.className = 'paper-doi';
+            doiElement.textContent = safeDoi;
+            card.appendChild(doiElement);
+        }
+
+        const openFn = () => openModal(paper);
+        card.addEventListener('click', openFn);
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openFn();
+            }
         });
 
-        container.appendChild(icon);
-        container.appendChild(msg);
-        container.appendChild(button);
-        paperGrid.appendChild(container);
+        paperGrid.appendChild(card);
     }
 
+    // --- Modal ---
+    function openModal(paper) {
+        currentModalPaper = paper;
+
+        // Title
+        modalTitle.textContent = truncateText(paper.title || 'Untitled', 300);
+
+        // Authors
+        modalAuthors.textContent = Array.isArray(paper.authors) ? paper.authors.join(', ') : 'N/A';
+
+        // Date
+        const safeDate = paper.date ? new Date(paper.date).toLocaleDateString() : 'N/A';
+        modalDate.textContent = safeDate;
+
+        // Source
+        if (modalSource) modalSource.textContent = paper.source || '--';
+
+        // DOI
+        const safeDoi = sanitizeDoi(paper.doi);
+        if (safeDoi) {
+            modalDoi.textContent = safeDoi;
+            modalDoi.style.display = 'block';
+        } else {
+            modalDoi.textContent = '--';
+        }
+
+        // Categories
+        if (modalCategories) {
+            modalCategories.innerHTML = '';
+            if (paper.categories && paper.categories.length > 0) {
+                paper.categories.forEach(cat => {
+                    const pill = document.createElement('span');
+                    pill.className = 'modal-cat-pill';
+                    pill.textContent = cat;
+                    modalCategories.appendChild(pill);
+                });
+            }
+        }
+
+        // Abstract
+        modalAbstract.textContent = truncateText(paper.abstract || 'No abstract available.', 2000);
+
+        // Link
+        const safeUrl = sanitizeUrl(paper.url);
+        modalLink.href = safeUrl;
+        if (safeUrl === '#') {
+            modalLink.style.display = 'none';
+        } else {
+            modalLink.style.display = 'flex';
+        }
+
+        modalBackdrop.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        modalBackdrop.classList.remove('open');
+        document.body.style.overflow = '';
+        currentModalPaper = null;
+    }
+
+    // Cite function
+    function citePaper() {
+        if (!currentModalPaper) return;
+        const p = currentModalPaper;
+        const authors = Array.isArray(p.authors) ? p.authors.join(', ') : 'Unknown';
+        const year = p.date ? new Date(p.date).getFullYear() : 'n.d.';
+        const title = p.title || 'Untitled';
+        const doi = p.doi ? ` https://doi.org/${p.doi}` : '';
+        const citation = `${authors} (${year}). ${title}.${doi}`;
+
+        navigator.clipboard.writeText(citation).then(() => {
+            showStatus('Citation copied to clipboard!');
+        }).catch(() => {
+            showStatus('Failed to copy citation', false);
+        });
+    }
+
+    // Copy DOI function
+    function copyDoi() {
+        if (!currentModalPaper || !currentModalPaper.doi) {
+            showStatus('No DOI available', false);
+            return;
+        }
+        navigator.clipboard.writeText(currentModalPaper.doi).then(() => {
+            showStatus('DOI copied to clipboard!');
+        }).catch(() => {
+            showStatus('Failed to copy DOI', false);
+        });
+    }
+
+    // --- API Functions ---
     async function searchSemanticScholar() {
         const queries = [
-            'generative AI agriculture',
-            'generative AI agrifood',
-            'foundation model agriculture',
-            'large language model agriculture',
-            'large language model agrifood',
-            'diffusion model agriculture',
-            'generative adversarial network agriculture',
-            'synthetic data agriculture',
-            'synthetic data crop',
-            'vision-language model agriculture',
-            'multimodal model agriculture',
-            'food industry generative AI',
-            'food processing generative AI',
-            'food safety generative AI',
+            'generative AI agriculture', 'generative AI agrifood',
+            'foundation model agriculture', 'large language model agriculture',
+            'large language model agrifood', 'diffusion model agriculture',
+            'generative adversarial network agriculture', 'synthetic data agriculture',
+            'synthetic data crop', 'vision-language model agriculture',
+            'multimodal model agriculture', 'food industry generative AI',
+            'food processing generative AI', 'food safety generative AI',
             'precision agriculture generative model',
         ];
-        
-        const allPapers = [];
-        const fields = 'title,authors,year,abstract,url,publicationDate,externalIds';
 
-        console.log(`Starting Semantic Scholar search with ${queries.length} individual queries.`);
+        const papers = [];
+        const fields = 'title,authors,year,abstract,url,publicationDate,externalIds';
 
         try {
             for (const query of queries) {
                 const encodedQuery = encodeURIComponent(query);
                 const url = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodedQuery}&fields=${fields}&limit=50&year=2023-`;
-
-                console.log(`Querying Semantic Scholar for: "${query}"`);
 
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -766,19 +920,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Accept': 'application/json' },
                     signal: controller.signal
                 });
-
                 clearTimeout(timeoutId);
 
-                if (!response.ok) {
-                    console.warn(`Semantic Scholar query for "${query}" failed with status: ${response.status}`);
-                    continue; // Skip to the next query if this one fails
-                }
+                if (!response.ok) continue;
 
                 const data = await response.json();
-                
                 if (data && data.data) {
-                    const papers = data.data.map(paper => {
-                        const processedPaper = {
+                    const results = data.data.map(paper => {
+                        const processed = {
                             title: truncateText(paper.title || '', 300),
                             authors: Array.isArray(paper.authors) ? paper.authors.slice(0, 10).map(a => truncateText(a.name || '', 100)) : [],
                             date: paper.publicationDate || (paper.year ? `${paper.year}-01-01` : null),
@@ -787,47 +936,34 @@ document.addEventListener('DOMContentLoaded', () => {
                             doi: paper.externalIds && paper.externalIds.DOI ? sanitizeDoi(paper.externalIds.DOI) : null,
                             source: 'SemanticScholar'
                         };
-                        processedPaper.categories = categorizePaper(processedPaper);
-                        return processedPaper;
+                        processed.categories = categorizePaper(processed);
+                        return processed;
                     }).filter(isRelevantPaper);
-                    allPapers.push(...papers);
+                    papers.push(...results);
                 }
-
-                // Small delay to be polite to the API
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
-
-            console.log('Semantic Scholar total papers found:', allPapers.length);
-            return allPapers;
-
+            return papers;
         } catch (error) {
-            console.error("Error during Semantic Scholar fetch loop:", error);
-            return allPapers; // Return what we have so far
+            console.error("Error during Semantic Scholar fetch:", error);
+            return papers;
         }
     }
 
-    
     async function searchCrossref() {
         const queries = [
-            'generative AI agriculture',
-            'generative AI agrifood',
-            'foundation model agriculture',
-            'large language model agriculture',
-            'diffusion model agriculture',
-            'generative adversarial network agriculture',
-            'synthetic data agriculture',
-            'food industry generative AI',
-            'food processing generative AI',
-            'food safety generative AI'
+            'generative AI agriculture', 'generative AI agrifood',
+            'foundation model agriculture', 'large language model agriculture',
+            'diffusion model agriculture', 'generative adversarial network agriculture',
+            'synthetic data agriculture', 'food industry generative AI',
+            'food processing generative AI', 'food safety generative AI'
         ];
-        
-        const allPapers = [];
-        const mailto = "bvalach@doctor.upv.es"; // Good practice for Crossref polite pool
-        const maxRetries = 3;
-        const retryDelay = 2000; // 2 seconds
 
-        console.log("Starting Crossref search.");
-    
+        const papers = [];
+        const mailto = "bvalach@doctor.upv.es";
+        const maxRetries = 3;
+        const retryDelay = 2000;
+
         try {
             for (const query of queries) {
                 let success = false;
@@ -835,28 +971,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     try {
                         const encodedQuery = encodeURIComponent(query);
                         const url = `https://api.crossref.org/works?query=${encodedQuery}&rows=100&filter=from-pub-date:2023-01-01&mailto=${mailto}`;
-                        
-                        console.log(`Querying Crossref for: "${query}" (Attempt ${attempt})`);
-                        
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => {
-                            controller.abort();
-                            console.warn(`Crossref query for "${query}" timed out.`);
-                        }, 15000);
 
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 15000);
                         const response = await fetch(url, { signal: controller.signal });
                         clearTimeout(timeoutId);
 
-                        if (!response.ok) {
-                            throw new Error(`Crossref query failed with status: ${response.status}`);
-                        }
+                        if (!response.ok) throw new Error(`Status: ${response.status}`);
 
                         const data = await response.json();
-                        
                         if (data.status === 'ok' && data.message && data.message.items) {
-                            const papers = data.message.items.map(item => {
+                            const results = data.message.items.map(item => {
                                 const authors = item.author ? item.author.map(a => `${a.given || ''} ${a.family || ''}`).filter(name => name.trim()) : [];
-                                
                                 let publicationDate = null;
                                 if (item.published && item.published['date-parts'] && item.published['date-parts'][0]) {
                                     const year = item.published['date-parts'][0][0];
@@ -865,42 +991,33 @@ document.addEventListener('DOMContentLoaded', () => {
                                     publicationDate = new Date(Date.UTC(year, month - 1, day));
                                 }
                                 const isValidDate = publicationDate && !isNaN(publicationDate);
-
-                                const processedPaper = {
+                                const processed = {
                                     title: item.title && item.title.length > 0 ? item.title[0] : 'No title available',
-                                    authors: authors,
+                                    authors,
                                     date: isValidDate ? publicationDate.toISOString().split('T')[0] : null,
                                     abstract: item.abstract ? truncateText(item.abstract.replace(/<\/?[^>]+(>|$)/g, ""), 3000) : 'No abstract available.',
                                     url: sanitizeUrl(item.URL),
                                     doi: item.DOI ? sanitizeDoi(item.DOI) : null,
                                     source: 'Crossref'
                                 };
-                                processedPaper.categories = categorizePaper(processedPaper);
-                                return processedPaper;
+                                processed.categories = categorizePaper(processed);
+                                return processed;
                             }).filter(p => p.date).filter(isRelevantPaper);
-
-                            allPapers.push(...papers);
+                            papers.push(...results);
                         }
                         success = true;
-                        break; // Salir del bucle de reintentos si tiene éxito
-
+                        break;
                     } catch (error) {
-                        console.warn(`Attempt ${attempt} for "${query}" failed:`, error.message);
                         if (attempt < maxRetries) {
                             await new Promise(resolve => setTimeout(resolve, retryDelay));
-                        } else {
-                            console.error(`All ${maxRetries} attempts failed for Crossref query: "${query}"`);
                         }
                     }
                 }
                 if (success) {
-                    await new Promise(resolve => setTimeout(resolve, 1000)); // Be polite to the API
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             }
-            
-            console.log('Crossref search completed. Total unique papers from Crossref:', allPapers.length);
-            return allPapers;
-    
+            return papers;
         } catch (error) {
             console.error("Error fetching from Crossref:", error);
             return [];
@@ -915,133 +1032,88 @@ document.addEventListener('DOMContentLoaded', () => {
         )`;
         const encodedQuery = encodeURIComponent(query);
         const url = `https://export.arxiv.org/api/query?search_query=${encodedQuery}&sortBy=submittedDate&sortOrder=descending&max_results=100`;
-        
-        console.log('ArXiv query length:', query.length);
-        console.log('ArXiv URL:', url.substring(0, 200) + '...');
 
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
-            const response = await fetchWithCorsFallback(url, {
-                method: 'GET',
-                signal: controller.signal
-            });
-
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            const response = await fetchWithCorsFallback(url, { method: 'GET', signal: controller.signal });
             clearTimeout(timeoutId);
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
             const xmlText = await response.text();
-            
-            console.log('ArXiv response status:', response.status);
-            console.log('ArXiv response length:', xmlText.length);
-            
-            // Validar que sea XML válido
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-            
+
             if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
                 throw new Error('Invalid XML response');
             }
 
             const entries = xmlDoc.getElementsByTagName("entry");
-            console.log('ArXiv entries found:', entries.length);
             const papers = [];
-            
-            // Limitar número de entradas procesadas
             const maxEntries = Math.min(entries.length, 100);
-            
+
             for (let i = 0; i < maxEntries; i++) {
                 const entry = entries[i];
                 try {
                     const title = entry.getElementsByTagName("title")[0]?.textContent?.trim() || '';
                     const abstract = entry.getElementsByTagName("summary")[0]?.textContent?.trim() || '';
                     const authors = Array.from(entry.getElementsByTagName("author"))
-                        .slice(0, 10) // Límite de autores
+                        .slice(0, 10)
                         .map(a => a.getElementsByTagName("name")[0]?.textContent?.trim() || '')
                         .filter(name => name);
                     const date = entry.getElementsByTagName("published")[0]?.textContent?.trim() || null;
-                    const url = entry.getElementsByTagName("id")[0]?.textContent?.trim() || '';
-                    
-                    const arxivId = url.split('/abs/')[1];
-                    const doi = null; // Los papers de arXiv no tienen DOI real
-                    
-                    const processedPaper = { 
+                    const entryUrl = entry.getElementsByTagName("id")[0]?.textContent?.trim() || '';
+
+                    const processed = {
                         title: truncateText(title, 300),
                         authors,
                         date,
                         abstract: truncateText(abstract, 3000),
-                        url: sanitizeUrl(url),
-                        doi: null, // No DOI para arXiv
-                        source: 'arXiv' // Añadir identificador de origen
+                        url: sanitizeUrl(entryUrl),
+                        doi: null,
+                        source: 'arXiv'
                     };
-                    
-                    // Añadir categorías automáticamente
-                    processedPaper.categories = categorizePaper(processedPaper);
-                    if (isRelevantPaper(processedPaper)) {
-                        papers.push(processedPaper);
-                    }
+                    processed.categories = categorizePaper(processed);
+                    if (isRelevantPaper(processed)) papers.push(processed);
                 } catch (e) {
-                    console.warn('Error processing arXiv entry:', e);
                     continue;
                 }
             }
-            
             return papers;
-            
         } catch (error) {
             console.error("Error fetching from arXiv:", error);
-            console.error("Error type:", error.name);
-            console.error("Error message:", error.message);
             return [];
         }
     }
 
-    // Enriquecer abstracts faltantes usando Semantic Scholar batch API
     async function enrichMissingAbstracts(papers) {
         const needEnrichment = papers.filter(p =>
             (!p.abstract || p.abstract === '' || p.abstract === 'No abstract available.') && p.doi
         );
-
         if (needEnrichment.length === 0) return;
-
-        console.log(`Enriching ${needEnrichment.length} papers missing abstracts via Semantic Scholar...`);
 
         const batchSize = 200;
         for (let i = 0; i < needEnrichment.length; i += batchSize) {
             const batch = needEnrichment.slice(i, i + batchSize);
             const ids = batch.map(p => `DOI:${p.doi}`);
-
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 15000);
-
                 const response = await fetch('https://api.semanticscholar.org/graph/v1/paper/batch', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ids, fields: 'abstract' }),
                     signal: controller.signal
                 });
-
                 clearTimeout(timeoutId);
-
-                if (!response.ok) {
-                    console.warn('Abstract enrichment batch failed:', response.status);
-                    continue;
-                }
-
+                if (!response.ok) continue;
                 const results = await response.json();
                 results.forEach((result, index) => {
                     if (result && result.abstract) {
                         batch[index].abstract = truncateText(result.abstract, 3000);
                     }
                 });
-
-                console.log(`Enrichment batch ${Math.floor(i / batchSize) + 1}: processed ${batch.length} papers`);
-
                 if (i + batchSize < needEnrichment.length) {
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }
@@ -1049,18 +1121,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn('Abstract enrichment batch error:', error.message);
             }
         }
-
-        const stillMissing = papers.filter(p =>
-            !p.abstract || p.abstract === '' || p.abstract === 'No abstract available.'
-        ).length;
-        console.log(`After enrichment: ${stillMissing} papers still without abstract`);
     }
 
+    // --- Main Load ---
     async function loadAllPapers(isBackgroundRefresh = false) {
-        if (!isBackgroundRefresh) {
-            showLoadingState();
-        }
-        
+        if (!isBackgroundRefresh) showLoadingState();
+
+        // Show spinning refresh icon
+        if (refreshBtn) refreshBtn.classList.add('spinning');
+
         try {
             const [scholarPapers, arxivPapers, crossrefPapers] = await Promise.all([
                 searchSemanticScholar(),
@@ -1068,21 +1137,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 searchCrossref()
             ]);
 
-            console.log('Semantic Scholar papers:', scholarPapers.length);
-            console.log('ArXiv papers:', arxivPapers.length);
-            console.log('Crossref papers:', crossrefPapers.length);
-
             allPapers = [...scholarPapers, ...arxivPapers, ...crossrefPapers];
 
-            console.log('Total papers before filtering:', allPapers.length);
-
             if (allPapers.length === 0) {
-                console.log('No papers found from APIs');
                 showErrorState('No papers could be loaded from the APIs. Please check your internet connection and try again.');
                 return;
             }
 
-            // Eliminar duplicados fusionando datos (preferir el mejor abstract, DOI, URL)
+            // Deduplicate
             const paperMap = new Map();
             allPapers.forEach(p => {
                 const key = p.title.toLowerCase().trim();
@@ -1090,21 +1152,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!existing) {
                     paperMap.set(key, p);
                 } else {
-                    // Preferir abstract no vacío
                     const existingHasAbstract = existing.abstract && existing.abstract !== '' && existing.abstract !== 'No abstract available.';
                     const newHasAbstract = p.abstract && p.abstract !== '' && p.abstract !== 'No abstract available.';
-                    if (!existingHasAbstract && newHasAbstract) {
-                        existing.abstract = p.abstract;
-                    }
-                    // Preferir DOI si falta
-                    if (!existing.doi && p.doi) {
-                        existing.doi = p.doi;
-                    }
-                    // Preferir URL real si falta
-                    if ((!existing.url || existing.url === '#') && p.url && p.url !== '#') {
-                        existing.url = p.url;
-                    }
-                    // Fusionar categorías
+                    if (!existingHasAbstract && newHasAbstract) existing.abstract = p.abstract;
+                    if (!existing.doi && p.doi) existing.doi = p.doi;
+                    if ((!existing.url || existing.url === '#') && p.url && p.url !== '#') existing.url = p.url;
                     if (p.categories) {
                         const cats = new Set([...(existing.categories || []), ...p.categories]);
                         existing.categories = Array.from(cats);
@@ -1113,203 +1165,61 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const uniquePapers = Array.from(paperMap.values());
 
-            console.log('Unique papers after deduplication:', uniquePapers.length);
-
-            // Enriquecer abstracts faltantes
             await enrichMissingAbstracts(uniquePapers);
 
-            // Filtrar por fecha (papers desde 2023)
+            // Filter by date (2023+)
             const filterDate = new Date('2023-01-01');
             const filteredPapers = uniquePapers.filter(paper => {
-                if (!paper.date || isNaN(new Date(paper.date))) {
-                    return false;
-                }
-                const paperDate = new Date(paper.date);
-                return paperDate >= filterDate;
+                if (!paper.date || isNaN(new Date(paper.date))) return false;
+                return new Date(paper.date) >= filterDate;
             });
-            
-            console.log('Papers after date filtering (2023+):', filteredPapers.length);
-            
-            filteredPapers.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+            filteredPapers.sort((a, b) => new Date(b.date) - new Date(a.date));
             allPapers = filteredPapers;
-            
-            initializeTimeline(allPapers);
+
+            initializeDateRange(allPapers);
             initializeSourceFilters();
-            initializeCategoryFilters(); // Inicializar filtros de categorías
+            initializeCategoryFilters();
+            updateStats();
 
             if (allPapers.length === 0) {
                 showGridMessage('No papers found matching the criteria (published after January 2023).');
                 return;
             }
-            applyFilters(); // Usar filtros en lugar de displayPapers directo
+            applyFilters();
 
-            // Guardar los resultados en el almacenamiento local después de una carga exitosa
             saveToLocal();
             if (isBackgroundRefresh) {
-                showSaveStatus(`Update complete. Total papers: ${allPapers.length}`, true);
+                showStatus(`Update complete. ${allPapers.length} papers.`);
             }
-
         } catch (error) {
             console.error('Error loading papers:', error);
             if (!isBackgroundRefresh) {
                 showErrorState('An unexpected error occurred while loading papers. Please try again.');
             } else {
-                showSaveStatus('Failed to update papers in the background.', false);
+                showStatus('Failed to update papers.', false);
             }
+        } finally {
+            if (refreshBtn) refreshBtn.classList.remove('spinning');
         }
     }
 
-    function displayPapers(papers) {
-        paperGrid.innerHTML = '';
-        if (papers.length === 0) {
-            showGridMessage('No papers found matching the selected criteria.');
-            return;
-        }
-        papers.forEach(createPaperCard);
-    }
+    // --- Event Listeners ---
 
-    function createPaperCard(paper) {
-        const card = document.createElement('div');
-        card.className = 'paper-card';
-        
-        // Sanitizar datos
-        const safeTitle = escapeHtml(truncateText(paper.title, 200));
-        const safeAuthors = escapeHtml(truncateText(Array.isArray(paper.authors) ? paper.authors.join(', ') : 'N/A', 150));
-        const safeDate = paper.date ? escapeHtml(new Date(paper.date).toLocaleDateString()) : 'N/A';
-        const safeDoi = sanitizeDoi(paper.doi);
-
-        // Crear elementos de forma segura
-        const titleElement = document.createElement('h3');
-        titleElement.textContent = paper.title || 'Untitled';
-
-        const authorsElement = document.createElement('p');
-        authorsElement.className = 'paper-authors';
-        authorsElement.textContent = Array.isArray(paper.authors) ? paper.authors.join(', ') : 'N/A';
-
-        const dateElement = document.createElement('p');
-        dateElement.className = 'paper-date';
-        dateElement.textContent = safeDate;
-
-        // Añadir etiquetas de fuente y categoría
-        const tagsContainer = document.createElement('div');
-        tagsContainer.className = 'paper-tags';
-
-        if (paper.source) {
-            const sourceTag = document.createElement('span');
-            const sourceClass = paper.source.toLowerCase().replace(/\s/g, '');
-            sourceTag.className = `source-tag source-${sourceClass}`;
-            sourceTag.textContent = paper.source;
-            tagsContainer.appendChild(sourceTag);
-        }
-        
-        if (paper.categories && paper.categories.length > 0) {
-            paper.categories.forEach(category => {
-                const categoryTag = document.createElement('span');
-                categoryTag.className = 'category-tag';
-                categoryTag.textContent = category;
-                tagsContainer.appendChild(categoryTag);
-            });
-        }
-        
-        if (tagsContainer.hasChildNodes()) {
-            card.appendChild(tagsContainer);
-        }
-
-        // Añadir elementos al card
-        card.appendChild(titleElement);
-        card.appendChild(authorsElement);
-        card.appendChild(dateElement);
-
-        // DOI solo si es válido
-        if (safeDoi) {
-            const doiElement = document.createElement('p');
-            doiElement.className = 'paper-doi';
-            doiElement.textContent = safeDoi;
-            card.appendChild(doiElement);
-        }
-
-        card.addEventListener('click', () => openModal({ 
-            ...paper, 
-            title: paper.title || 'Untitled',
-            authors: Array.isArray(paper.authors) ? paper.authors.join(', ') : 'N/A',
-            date: safeDate 
-        }));
-        
-        paperGrid.appendChild(card);
-    }
-
-    function openModal(paper) {
-        // Sanitizar todos los datos del modal
-        modalTitle.textContent = truncateText(paper.title || 'Untitled', 300);
-        modalAuthors.textContent = 'Authors: ' + truncateText(paper.authors || 'N/A', 200);
-        modalDate.textContent = 'Date: ' + (paper.date || 'N/A');
-
-        const safeDoi = sanitizeDoi(paper.doi);
-        if (safeDoi) {
-            // Crear enlace DOI de forma segura
-            modalDoi.innerHTML = '';
-            const doiLink = document.createElement('a');
-            doiLink.href = `https://doi.org/${safeDoi}`;
-            doiLink.target = '_blank';
-            doiLink.rel = 'noopener noreferrer'; // Seguridad adicional
-            doiLink.textContent = safeDoi;
-            modalDoi.appendChild(doiLink);
-            modalDoi.style.display = 'block';
-        } else {
-            modalDoi.style.display = 'none';
-        }
-
-        modalAbstract.textContent = truncateText(paper.abstract || 'No abstract available.', 2000);
-        
-        const safeUrl = sanitizeUrl(paper.url);
-        modalLink.href = safeUrl;
-        if (safeUrl === '#') {
-            modalLink.style.display = 'none';
-        } else {
-            modalLink.style.display = 'inline-block';
-            modalLink.rel = 'noopener noreferrer'; // Seguridad adicional
-        }
-
-        modal.style.display = 'block';
-    }
-
-    function closeModal() {
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto'; // Restaurar scroll del body
-    }
-
-    // Event listeners mejorados
-    closeButton.addEventListener('click', closeModal);
-    
-    window.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            closeModal();
-        }
+    // Modal
+    if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+    modalBackdrop.addEventListener('click', (e) => {
+        if (e.target === modalBackdrop) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalBackdrop.classList.contains('open')) closeModal();
     });
 
-    // Soporte para teclado
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && modal.style.display === 'block') {
-            closeModal();
-        }
-    });
+    // Modal actions
+    if (modalCiteBtn) modalCiteBtn.addEventListener('click', citePaper);
+    if (modalCopyDoiBtn) modalCopyDoiBtn.addEventListener('click', copyDoi);
 
-    // Event listeners for timeline
-    dateSliderMin.addEventListener('input', updateDateRange);
-    dateSliderMax.addEventListener('input', updateDateRange);
-    resetButton.addEventListener('click', resetTimeline);
-
-    // Event listeners for category filters
-    selectAllBtn.addEventListener('click', selectAllCategories);
-    clearAllBtn.addEventListener('click', clearAllCategories);
-
-    // Event listeners for source filters
-    selectAllSourcesBtn.addEventListener('click', selectAllSources);
-    clearAllSourcesBtn.addEventListener('click', clearAllSources);
-
-    // Event listener for search
-    const searchInput = document.getElementById('paper-search');
+    // Search
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             searchTerm = e.target.value.trim();
@@ -1317,29 +1227,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Event listeners for data persistence
-    exportJsonBtn.addEventListener('click', exportToJson);
-    exportCsvBtn.addEventListener('click', exportToCsv);
-    exportMarkdownBtn.addEventListener('click', exportToMarkdown);
-    exportRisBtn.addEventListener('click', exportToRis);
-    saveLocalBtn.addEventListener('click', saveToLocal);
-    loadLocalBtn.addEventListener('click', loadFromLocal);
+    // Filter bar
+    if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', applyBarFilters);
+    if (resetFiltersBtn) resetFiltersBtn.addEventListener('click', resetAllFilters);
 
-    // Inicializar la aplicación
+    // Source/category chip actions
+    if (selectAllSourcesBtn) selectAllSourcesBtn.addEventListener('click', selectAllSources);
+    if (clearAllSourcesBtn) clearAllSourcesBtn.addEventListener('click', clearAllSources);
+    if (selectAllCategoriesBtn) selectAllCategoriesBtn.addEventListener('click', selectAllCategories);
+    if (clearAllCategoriesBtn) clearAllCategoriesBtn.addEventListener('click', clearAllCategories);
+
+    // Export dropdown
+    if (exportToggleBtn) exportToggleBtn.addEventListener('click', toggleExportMenu);
+    if (exportJsonBtn) exportJsonBtn.addEventListener('click', exportToJson);
+    if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportToCsv);
+    if (exportMarkdownBtn) exportMarkdownBtn.addEventListener('click', exportToMarkdown);
+    if (exportRisBtn) exportRisBtn.addEventListener('click', exportToRis);
+
+    // Save/Load
+    if (saveLocalBtn) saveLocalBtn.addEventListener('click', saveToLocalExplicit);
+    if (loadLocalBtn) loadLocalBtn.addEventListener('click', loadFromLocal);
+
+    // Refresh button
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            loadAllPapers(false);
+        });
+    }
+
+    // Mobile export button opens export menu
+    if (mobileExportBtn) {
+        mobileExportBtn.addEventListener('click', () => {
+            // Quick mobile export: download JSON
+            exportToJson();
+        });
+    }
+
+    // --- Initialize ---
     function initialize() {
         const cachedData = loadFromLocal();
 
         if (cachedData) {
-            // Si hay caché, comprobar si es antigua (más de 12 horas)
             const cacheAge = new Date() - new Date(cachedData.timestamp);
             const twelveHours = 12 * 60 * 60 * 1000;
-
             if (cacheAge > twelveHours) {
-                showSaveStatus('Cache is old. Checking for updates in the background...', true);
-                loadAllPapers(true); // Actualizar en segundo plano
+                showStatus('Cache is old. Checking for updates...');
+                loadAllPapers(true);
             }
         } else {
-            // Si no hay caché, hacer la carga inicial completa
             loadAllPapers(false);
         }
     }

@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data:; frame-src 'self' https://app.litmaps.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data:; frame-src 'self';">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    <title>foodAI — Literature Map</title>
+    <title>foodAI — Authors</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL@20..48,100..700,0..1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="views.css">
     <script src="theme.js"></script>
 </head>
 <body>
@@ -21,10 +22,14 @@
             <a href="index.html" class="brand">foodAI</a>
             <div class="top-bar-tabs">
                 <a href="index.html" class="tab-link">Library</a>
-                <a href="mapa.html" class="tab-link tab-link--active">Literature Map</a>
+                <a href="mapa.html" class="tab-link">Literature Map</a>
             </div>
         </div>
         <div class="top-bar-right">
+            <div class="top-bar-search">
+                <span class="material-symbols-outlined search-icon">search</span>
+                <input type="text" id="author-search" placeholder="Search authors...">
+            </div>
             <button id="theme-toggle" class="icon-btn theme-toggle" type="button" aria-label="Toggle theme"></button>
         </div>
     </nav>
@@ -43,11 +48,11 @@
                     <span class="material-symbols-outlined">book_2</span>
                     <span>Library</span>
                 </a>
-                <a href="mapa.html" class="sidebar-link sidebar-link--active">
+                <a href="mapa.html" class="sidebar-link">
                     <span class="material-symbols-outlined">map</span>
                     <span>Literature Map</span>
                 </a>
-                <a href="authors.html" class="sidebar-link">
+                <a href="authors.html" class="sidebar-link sidebar-link--active">
                     <span class="material-symbols-outlined">group</span>
                     <span>Authors</span>
                 </a>
@@ -56,30 +61,44 @@
                     <span>Topics</span>
                 </a>
             </nav>
+
+            <!-- Stats Panel -->
+            <div class="sidebar-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Unique Authors</span>
+                    <span class="stat-value stat-value--lg" id="stat-authors">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total Papers</span>
+                    <span class="stat-value" id="stat-total">--</span>
+                </div>
+            </div>
         </aside>
 
         <!-- Main Content -->
         <div class="main-content">
+
             <section class="hero">
-                <span class="hero-eyebrow">Citation Network</span>
-                <h1 class="hero-title">Literature Map</h1>
-                <p class="hero-description">Interactive citation graph generated with Litmaps. Explore how papers connect through citations and discover research clusters.</p>
-                <div class="hero-credits">
-                    <span><strong>PhD Candidate</strong> Dra Beatriz Vallina</span>
-                    <span class="hero-sep">&middot;</span>
-                    <span><strong>Supervisors</strong> Dr Roberto Cervell&oacute; &amp; Dr Juan Jos&eacute; Lull</span>
-                </div>
+                <span class="hero-eyebrow">Researcher Network</span>
+                <h1 class="hero-title">Authors</h1>
+                <p class="hero-description">Researchers contributing to Generative AI in the AgriFood sector, ranked by number of publications in this review.</p>
             </section>
 
-            <div class="mapa-content">
-                <iframe
-                    src="https://app.litmaps.com/shared/88609359-c9da-40fc-81ca-53edcf821b56"
-                    title="Interactive literature map generated with Litmaps"
-                    width="100%"
-                    height="600"
-                    allowfullscreen>
-                </iframe>
-            </div>
+            <!-- Sort controls -->
+            <section class="view-controls">
+                <div class="view-sort">
+                    <label class="filter-label">Sort by</label>
+                    <select id="sort-authors" class="filter-select">
+                        <option value="papers">Number of papers</option>
+                        <option value="name">Alphabetical</option>
+                        <option value="recent">Most recent</option>
+                    </select>
+                </div>
+                <span class="view-count" id="showing-count"></span>
+            </section>
+
+            <!-- Author list -->
+            <main id="author-list" class="view-list"></main>
 
             <footer>
                 <p>&copy; 2026 | Research by <a href="https://www.linkedin.com/in/beatrizvallina/" target="_blank" rel="noopener noreferrer">Beatriz Vallina</a></p>
@@ -94,11 +113,11 @@
             <span class="material-symbols-outlined">book_2</span>
             <span>Library</span>
         </a>
-        <a href="mapa.html" class="mobile-nav-item mobile-nav-item--active">
+        <a href="mapa.html" class="mobile-nav-item">
             <span class="material-symbols-outlined">map</span>
             <span>Lit Map</span>
         </a>
-        <a href="authors.html" class="mobile-nav-item">
+        <a href="authors.html" class="mobile-nav-item mobile-nav-item--active">
             <span class="material-symbols-outlined">group</span>
             <span>Authors</span>
         </a>
@@ -108,5 +127,6 @@
         </a>
     </nav>
 
+    <script src="authors.js"></script>
 </body>
 </html>

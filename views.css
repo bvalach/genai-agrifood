@@ -1,0 +1,303 @@
+/* =============================================
+   Views CSS — Authors & Topics pages
+   Shared styles for secondary views
+   ============================================= */
+
+/* --- View Controls --- */
+.view-controls {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.view-sort {
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+}
+
+.view-count {
+    font-size: .78rem;
+    color: var(--on-surface-subtle);
+    font-weight: 500;
+}
+
+/* --- Author List --- */
+.view-list {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+
+.author-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .85rem 1.1rem;
+    background: var(--surface-container);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all .3s ease;
+    border: 1px solid transparent;
+}
+.author-row:hover {
+    background: var(--surface-container-high);
+    border-color: var(--accent-border);
+    transform: translateX(3px);
+}
+
+.author-rank {
+    font-size: .65rem;
+    font-weight: 800;
+    color: var(--on-surface-subtle);
+    min-width: 2rem;
+    text-align: center;
+}
+.author-rank.top-3 {
+    color: var(--primary);
+}
+
+.author-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.author-name {
+    font-size: .88rem;
+    font-weight: 700;
+    color: var(--on-surface);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.author-meta {
+    font-size: .68rem;
+    color: var(--on-surface-subtle);
+    margin-top: .15rem;
+}
+
+.author-count {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .3rem .7rem;
+    background: var(--accent-bg);
+    border-radius: 9999px;
+    font-size: .72rem;
+    font-weight: 700;
+    color: var(--primary);
+    white-space: nowrap;
+}
+.author-count .material-symbols-outlined {
+    font-size: 14px;
+}
+
+/* Author detail (expanded) */
+.author-papers {
+    display: none;
+    padding: .5rem 0 .5rem 3.1rem;
+    flex-direction: column;
+    gap: .25rem;
+}
+.author-papers.open {
+    display: flex;
+}
+
+.author-paper-link {
+    font-size: .78rem;
+    color: var(--on-surface-variant);
+    padding: .4rem .75rem;
+    border-radius: var(--radius);
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    text-decoration: none;
+}
+.author-paper-link:hover {
+    background: var(--surface-container-high);
+    color: var(--on-surface);
+}
+.author-paper-link .material-symbols-outlined {
+    font-size: 14px;
+    color: var(--on-surface-subtle);
+}
+.author-paper-date {
+    font-size: .62rem;
+    color: var(--on-surface-subtle);
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+/* --- Topics Grid --- */
+.topics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: .75rem;
+}
+
+.topic-card {
+    background: var(--surface-container);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.3rem;
+    border: 1px solid transparent;
+    transition: all .3s ease;
+    cursor: pointer;
+}
+.topic-card:hover {
+    border-color: var(--accent-border);
+    background: var(--surface-container-high);
+}
+.topic-card.open {
+    border-color: var(--accent-border-hover);
+}
+
+.topic-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+}
+
+.topic-name {
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--on-surface);
+}
+
+.topic-count {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .25rem .65rem;
+    background: var(--accent-bg);
+    border-radius: 9999px;
+    font-size: .72rem;
+    font-weight: 700;
+    color: var(--primary);
+    white-space: nowrap;
+}
+.topic-count .material-symbols-outlined {
+    font-size: 14px;
+}
+
+.topic-bar {
+    margin-top: .75rem;
+    height: 4px;
+    background: var(--surface-container-high);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.topic-bar-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 2px;
+    transition: width .5s ease;
+    opacity: .5;
+}
+
+.topic-chevron {
+    color: var(--on-surface-subtle);
+    transition: transform var(--transition);
+    font-size: 18px !important;
+}
+.topic-card.open .topic-chevron {
+    transform: rotate(180deg);
+}
+
+/* Topic papers list */
+.topic-papers {
+    display: none;
+    flex-direction: column;
+    gap: .2rem;
+    margin-top: .75rem;
+    padding-top: .75rem;
+    border-top: 1px solid var(--ghost-border);
+}
+.topic-card.open .topic-papers {
+    display: flex;
+}
+
+.topic-paper-item {
+    font-size: .78rem;
+    color: var(--on-surface-variant);
+    padding: .4rem .5rem;
+    border-radius: var(--radius);
+    transition: all var(--transition);
+    display: flex;
+    gap: .5rem;
+    align-items: flex-start;
+}
+.topic-paper-item:hover {
+    background: var(--surface-container-high);
+    color: var(--on-surface);
+}
+.topic-paper-item .material-symbols-outlined {
+    font-size: 14px;
+    color: var(--on-surface-subtle);
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.topic-paper-title {
+    flex: 1;
+    line-height: 1.35;
+}
+
+.topic-paper-authors {
+    font-size: .65rem;
+    color: var(--on-surface-subtle);
+    margin-top: .15rem;
+}
+
+/* --- Empty state --- */
+.view-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--surface-container-low);
+    border-radius: var(--radius-lg);
+}
+.view-empty .material-symbols-outlined {
+    font-size: 48px;
+    color: var(--on-surface-subtle);
+    margin-bottom: 1rem;
+}
+.view-empty p {
+    font-size: .9rem;
+    color: var(--on-surface-subtle);
+    margin: .25rem 0;
+}
+.view-empty a {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    margin-top: 1rem;
+    padding: .6rem 1.2rem;
+    background: linear-gradient(135deg, var(--primary), var(--primary-container));
+    color: var(--primary-on);
+    font-weight: 700;
+    font-size: .82rem;
+    border-radius: var(--radius);
+    transition: all var(--transition);
+}
+.view-empty a:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+    color: var(--primary-on);
+}
+
+/* --- Responsive --- */
+@media (max-width: 767px) {
+    .topics-grid {
+        grid-template-columns: 1fr;
+    }
+    .view-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

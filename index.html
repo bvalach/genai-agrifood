@@ -9,108 +9,279 @@
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>foodAI — Generative AI in AgriFood</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL@20..48,100..700,0..1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="style.css">
     <script src="theme.js"></script>
 </head>
 <body>
 
+    <!-- Top Bar -->
     <nav class="top-bar">
-        <a href="index.html" class="brand">foodAI</a>
-        <div class="top-bar-actions">
-            <a href="mapa.html" class="nav-link nav-link--featured">Literature Map</a>
-            <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme"></button>
+        <div class="top-bar-left">
+            <a href="index.html" class="brand">foodAI</a>
+            <div class="top-bar-tabs">
+                <a href="index.html" class="tab-link tab-link--active">Library</a>
+                <a href="mapa.html" class="tab-link">Literature Map</a>
+            </div>
+        </div>
+        <div class="top-bar-right">
+            <div class="top-bar-search">
+                <span class="material-symbols-outlined search-icon">search</span>
+                <input type="text" id="paper-search" placeholder="Search archive...">
+            </div>
+            <button id="refresh-btn" class="icon-btn" type="button" title="Refresh data from APIs">
+                <span class="material-symbols-outlined">sync</span>
+            </button>
+            <button id="theme-toggle" class="icon-btn theme-toggle" type="button" aria-label="Toggle theme"></button>
         </div>
     </nav>
 
-    <header>
-        <p class="hero-eyebrow">GenAI Agrifood Observatory</p>
-        <h1>A living review on Generative AI in the AgriFood sector</h1>
-        <div class="header-info">
-            <p class="loading-notice">Data sources may take a moment to load (especially Crossref). If results appear incomplete, refresh the page.</p>
-            <div class="acknowledgement">
-                <p><strong>PhD Candidate</strong> Dra Beatriz Vallina</p>
-                <p><strong>Supervisors</strong> Dr Roberto Cervelló &amp; Dr Juan José Lull</p>
-            </div>
-        </div>
-    </header>
+    <div class="app-layout">
 
-    <div class="timeline-container">
-        <h3>Filter by Publication Date</h3>
-        <div class="timeline-controls">
-            <div class="timeline-labels">
-                <span id="min-date">Jan 2025</span>
-                <span id="max-date">Dec 2030</span>
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2 class="sidebar-title">Observatory</h2>
+                <p class="sidebar-subtitle">GenAI in AgriFood</p>
             </div>
-            <div class="timeline-slider">
-                <input type="range" id="date-slider-min" min="0" max="23" value="0" step="1">
-                <input type="range" id="date-slider-max" min="0" max="23" value="23" step="1">
+
+            <nav class="sidebar-nav">
+                <a href="index.html" class="sidebar-link sidebar-link--active">
+                    <span class="material-symbols-outlined">book_2</span>
+                    <span>Library</span>
+                </a>
+                <a href="mapa.html" class="sidebar-link">
+                    <span class="material-symbols-outlined">map</span>
+                    <span>Literature Map</span>
+                </a>
+                <a href="authors.html" class="sidebar-link">
+                    <span class="material-symbols-outlined">group</span>
+                    <span>Authors</span>
+                </a>
+                <a href="topics.html" class="sidebar-link">
+                    <span class="material-symbols-outlined">biotech</span>
+                    <span>Topics</span>
+                </a>
+            </nav>
+
+            <!-- Stats Panel -->
+            <div class="sidebar-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Total Papers</span>
+                    <span class="stat-value stat-value--lg" id="stat-total">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Sources</span>
+                    <span class="stat-value" id="stat-sources">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Categories</span>
+                    <span class="stat-value" id="stat-categories">--</span>
+                </div>
             </div>
-            <div class="timeline-selected">
-                <span>Selected range: </span>
-                <span id="selected-range">Jan 2025 - Dec 2026</span>
-                <button id="reset-timeline" type="button">Reset</button>
+
+            <!-- Export & Actions -->
+            <div class="sidebar-footer">
+                <div class="export-dropdown">
+                    <button id="export-toggle" class="export-toggle-btn" type="button">
+                        <span class="material-symbols-outlined">download</span>
+                        <span>Export Data</span>
+                    </button>
+                    <div id="export-menu" class="export-menu">
+                        <button id="export-json" class="export-menu-item" type="button">
+                            <span class="export-fmt">{}</span> JSON
+                        </button>
+                        <button id="export-csv" class="export-menu-item" type="button">
+                            <span class="export-fmt">csv</span> CSV
+                        </button>
+                        <button id="export-markdown" class="export-menu-item" type="button">
+                            <span class="export-fmt">md</span> Markdown
+                        </button>
+                        <button id="export-ris" class="export-menu-item" type="button">
+                            <span class="export-fmt">ris</span> RIS
+                        </button>
+                    </div>
+                </div>
+                <div class="sidebar-actions">
+                    <button id="save-local" class="sidebar-action-btn" type="button">
+                        <span class="material-symbols-outlined">save</span>
+                        <span>Save Locally</span>
+                    </button>
+                    <button id="load-local" class="sidebar-action-btn" type="button">
+                        <span class="material-symbols-outlined">folder_open</span>
+                        <span>Load Saved</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+
+            <!-- Hero -->
+            <section class="hero">
+                <span class="hero-eyebrow">Advanced Discovery</span>
+                <h1 class="hero-title">GenAI Agrifood Observatory</h1>
+                <p class="hero-description">A living literature review on Generative AI in the AgriFood sector. Data from Semantic Scholar, arXiv &amp; Crossref.</p>
+                <div class="hero-credits">
+                    <span><strong>PhD Candidate</strong> Dra Beatriz Vallina</span>
+                    <span class="hero-sep">&middot;</span>
+                    <span><strong>Supervisors</strong> Dr Roberto Cervell&oacute; &amp; Dr Juan Jos&eacute; Lull</span>
+                </div>
+            </section>
+
+            <!-- Filter Bar -->
+            <section class="filter-bar">
+                <div class="filter-group">
+                    <label class="filter-label">Date Range</label>
+                    <div class="filter-date-row">
+                        <input type="month" id="date-from" class="filter-input">
+                        <span class="filter-sep">to</span>
+                        <input type="month" id="date-to" class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Source</label>
+                    <select id="filter-source" class="filter-select">
+                        <option value="all">All Sources</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Category</label>
+                    <select id="filter-category" class="filter-select">
+                        <option value="all">All Categories</option>
+                    </select>
+                </div>
+                <div class="filter-bar-actions">
+                    <button id="apply-filters" class="filter-apply-btn" type="button">Apply</button>
+                    <button id="reset-filters" class="filter-reset-btn" type="button">Reset</button>
+                </div>
+            </section>
+
+            <!-- Quick Filter Tags -->
+            <section class="tags-section">
+                <div class="tags-group">
+                    <div class="tags-row" id="source-filters"></div>
+                    <div class="tags-actions">
+                        <button id="select-all-sources" class="tags-action-btn" type="button">All</button>
+                        <button id="clear-all-sources" class="tags-action-btn" type="button">None</button>
+                    </div>
+                </div>
+                <div class="tags-group">
+                    <div class="tags-row" id="category-filters"></div>
+                    <div class="tags-actions">
+                        <button id="select-all-categories" class="tags-action-btn" type="button">All</button>
+                        <button id="clear-all-categories" class="tags-action-btn" type="button">None</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Paper Grid -->
+            <main id="paper-grid"></main>
+
+            <!-- Footer -->
+            <footer>
+                <p>&copy; 2026 | Research by <a href="https://www.linkedin.com/in/beatrizvallina/" target="_blank" rel="noopener noreferrer">Beatriz Vallina</a></p>
+                <p>Agrifood Economics, Universitat Polit&egrave;cnica de Val&egrave;ncia</p>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Modal (two-column) -->
+    <div id="modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-panel">
+            <button class="modal-close" id="modal-close-btn" type="button" aria-label="Close">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <!-- Left: Metadata -->
+            <div class="modal-meta">
+                <div class="modal-meta-group">
+                    <span class="modal-meta-label">Digital Object Identifier</span>
+                    <code id="modal-doi" class="modal-doi-code">--</code>
+                </div>
+                <div class="modal-meta-group">
+                    <span class="modal-meta-label">Source</span>
+                    <p id="modal-source" class="modal-meta-value">--</p>
+                    <p id="modal-date" class="modal-meta-sub">--</p>
+                </div>
+                <div class="modal-meta-group">
+                    <span class="modal-meta-label">Subject Areas</span>
+                    <div id="modal-categories" class="modal-categories"></div>
+                </div>
+                <div class="modal-meta-cta">
+                    <a id="modal-link" class="modal-cta-link" href="#" target="_blank" rel="noopener noreferrer">
+                        <div>
+                            <span class="modal-cta-title">View Full Paper</span>
+                            <span class="modal-cta-sub">External Link</span>
+                        </div>
+                        <span class="material-symbols-outlined modal-cta-arrow">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right: Content -->
+            <div class="modal-body">
+                <div class="modal-body-inner">
+                    <header class="modal-header">
+                        <div class="modal-badge">
+                            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">science</span>
+                            <span>Research Paper</span>
+                        </div>
+                        <h2 id="modal-title" class="modal-title">Paper Title</h2>
+                    </header>
+
+                    <section class="modal-section">
+                        <span class="modal-section-label">Authors</span>
+                        <p id="modal-authors" class="modal-authors-text">--</p>
+                    </section>
+
+                    <section class="modal-section">
+                        <span class="modal-section-label">Abstract</span>
+                        <p id="modal-abstract" class="modal-abstract-text">No abstract available.</p>
+                    </section>
+
+                    <div class="modal-actions">
+                        <button id="modal-cite" class="modal-action-btn" type="button">
+                            <span class="material-symbols-outlined">format_quote</span>
+                            Cite
+                        </button>
+                        <button id="modal-copy-doi" class="modal-action-btn" type="button">
+                            <span class="material-symbols-outlined">content_copy</span>
+                            Copy DOI
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="filters-row">
-        <div class="source-filters-container">
-            <h3>Filter by Source</h3>
-            <div class="source-filters" id="source-filters"></div>
-            <div class="filter-actions">
-                <button id="select-all-sources" class="filter-action-btn" type="button">Select All</button>
-                <button id="clear-all-sources" class="filter-action-btn" type="button">Clear All</button>
-            </div>
-        </div>
+    <!-- Mobile Bottom Nav -->
+    <nav class="mobile-nav">
+        <a href="index.html" class="mobile-nav-item mobile-nav-item--active">
+            <span class="material-symbols-outlined">book_2</span>
+            <span>Library</span>
+        </a>
+        <a href="mapa.html" class="mobile-nav-item">
+            <span class="material-symbols-outlined">map</span>
+            <span>Lit Map</span>
+        </a>
+        <a href="authors.html" class="mobile-nav-item">
+            <span class="material-symbols-outlined">group</span>
+            <span>Authors</span>
+        </a>
+        <a href="topics.html" class="mobile-nav-item">
+            <span class="material-symbols-outlined">biotech</span>
+            <span>Topics</span>
+        </a>
+    </nav>
 
-        <div class="category-filters-container">
-            <h3>Filter by Category</h3>
-            <div class="category-filters" id="category-filters"></div>
-            <div class="filter-actions">
-                <button id="select-all-categories" class="filter-action-btn" type="button">Select All</button>
-                <button id="clear-all-categories" class="filter-action-btn" type="button">Clear All</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="data-persistence-container">
-        <h3>Living Review Management</h3>
-        <div class="persistence-controls">
-            <button id="export-json" class="export-btn" type="button">Export JSON</button>
-            <button id="export-csv" class="export-btn" type="button">Export CSV</button>
-            <button id="export-markdown" class="export-btn" type="button">Export Markdown</button>
-            <button id="export-ris" class="export-btn" type="button">Export RIS</button>
-            <button id="save-local" class="export-btn" type="button">Save Locally</button>
-            <button id="load-local" class="export-btn" type="button">Load Saved</button>
-            <span id="save-status" class="save-status"></span>
-        </div>
-    </div>
-
-    <div class="search-container">
-        <div class="search-wrapper">
-            <input type="text" id="paper-search" placeholder="Search papers by title, author, keyword, DOI...">
-        </div>
-    </div>
-
-    <main id="paper-grid"></main>
-
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2 id="modal-title"></h2>
-            <p id="modal-authors"></p>
-            <p id="modal-date"></p>
-            <p id="modal-doi"></p>
-            <p id="modal-abstract"></p>
-            <a id="modal-link" href="#" target="_blank" rel="noopener noreferrer">Read Paper</a>
-        </div>
+    <!-- Status Toast -->
+    <div id="status-toast" class="status-toast">
+        <span id="status-icon" class="material-symbols-outlined">check_circle</span>
+        <span id="status-text"></span>
     </div>
 
     <script src="script.js"></script>
-
-    <footer>
-        <p>&copy; 2026 | Research by <a href="https://www.linkedin.com/in/beatrizvallina/" target="_blank" rel="noopener noreferrer">Beatriz Vallina</a></p>
-        <p>Agrifood Economics, Universitat Politecnica de Valencia</p>
-    </footer>
 </body>
 </html>
