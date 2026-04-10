@@ -91,12 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchWithCorsFallback(url, options = {}) {
-        try {
-            return await fetch(url, options);
-        } catch (error) {
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-            return await fetch(proxyUrl, options);
-        }
+        return await fetch(url, options);
     }
 
     // --- State ---
