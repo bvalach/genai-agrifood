@@ -13,6 +13,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function sanitizeUrl(url) {
+        if (!url || url === '#') return '#';
+        try {
+            const parsed = new URL(url);
+            return (parsed.protocol === 'https:' || parsed.protocol === 'http:') ? url : '#';
+        } catch {
+            return '#';
+        }
+    }
+
     function buildTopicIndex(papers) {
         const topicMap = new Map();
 
@@ -119,9 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const title = document.createElement('div');
                     title.className = 'topic-paper-title';
-                    if (paper.url && paper.url !== '#') {
+                    const safeUrl = sanitizeUrl(paper.url);
+                    if (safeUrl !== '#') {
                         const link = document.createElement('a');
-                        link.href = paper.url;
+                        link.href = safeUrl;
                         link.target = '_blank';
                         link.rel = 'noopener noreferrer';
                         link.textContent = paper.title;
