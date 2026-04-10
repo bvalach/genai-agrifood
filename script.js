@@ -490,19 +490,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function sanitizeCsvCell(value, maxLength = null) {
+        let sanitized = value == null ? '' : String(value);
+        if (typeof maxLength === 'number') {
+            sanitized = sanitized.substring(0, maxLength);
+        }
+
+        if (/^[=+\-@]/.test(sanitized)) {
+            sanitized = `'${sanitized}`;
+        }
+
+        return `"${sanitized.replace(/"/g, '""')}"`;
+    }
+
     function exportToCsv() {
         try {
             const headers = ['Title', 'Authors', 'Date', 'Categories', 'DOI', 'URL', 'Abstract'];
             const csvRows = [headers.join(',')];
             allPapers.forEach(paper => {
                 const row = [
-                    `"${(paper.title || '').replace(/"/g, '""')}"`,
-                    `"${Array.isArray(paper.authors) ? paper.authors.join('; ') : ''}"`,
-                    `"${paper.date || ''}"`,
-                    `"${paper.categories ? paper.categories.join('; ') : ''}"`,
-                    `"${paper.doi || ''}"`,
-                    `"${paper.url || ''}"`,
-                    `"${(paper.abstract || '').replace(/"/g, '""').substring(0, 500)}"`
+                    sanitizeCsvCell(paper.title || ''),
+                    sanitizeCsvCell(Array.isArray(paper.authors) ? paper.authors.join('; ') : ''),
+                    sanitizeCsvCell(paper.date || ''),
+                    sanitizeCsvCell(paper.categories ? paper.categories.join('; ') : ''),
+                    sanitizeCsvCell(paper.doi || ''),
+                    sanitizeCsvCell(paper.url || ''),
+                    sanitizeCsvCell(paper.abstract || '', 500)
                 ];
                 csvRows.push(row.join(','));
             });
