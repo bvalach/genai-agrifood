@@ -14,6 +14,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
+    function sanitizeUrl(url) {
+        if (!url || url === '#') return '#';
+        try {
+            const parsed = new URL(url);
+            return (parsed.protocol === 'https:' || parsed.protocol === 'http:') ? url : '#';
+        } catch {
+            return '#';
+        }
+    }
+
     function loadData() {
         try {
             const savedData = localStorage.getItem('foodAI-living-review');
@@ -141,8 +151,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 .forEach(paper => {
                     const link = document.createElement('a');
                     link.className = 'author-paper-link';
-                    link.href = paper.url && paper.url !== '#' ? paper.url : '#';
-                    if (paper.url && paper.url !== '#') {
+                    const safeUrl = sanitizeUrl(paper.url);
+                    link.href = safeUrl;
+                    if (safeUrl !== '#') {
                         link.target = '_blank';
                         link.rel = 'noopener noreferrer';
                     }
